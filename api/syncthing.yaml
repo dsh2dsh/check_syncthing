@@ -1,0 +1,494 @@
+openapi: "3.0.0"
+info:
+  title: "Syncthing REST API"
+  contact:
+    url: "https://docs.syncthing.net/dev/rest.html"
+  version: "0.0.1"
+
+paths:
+  /rest/config/devices:
+    get:
+      operationId: "Devices"
+      description: "Returns all devices as an array."
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/DeviceConfiguration"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /rest/config/folders:
+    get:
+      operationId: "Folders"
+      description: "Returns all folders as an array."
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/FolderConfiguration"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /rest/noauth/health:
+    get:
+      operationId: "Health"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /rest/stats/device:
+    description: "Returns general statistics about devices."
+    get:
+      operationId: "DeviceStats"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                additionalProperties:
+                  $ref: "#/components/schemas/DeviceStatistics"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /rest/system/connections:
+    description: |
+      Returns the list of configured devices and some metadata associated with
+      them. The list also contains the local device itself as not connected.
+
+      The connection types are TCP (Client), TCP (Server), Relay (Client) and
+      Relay (Server).
+    get:
+      operationId: "Connections"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Connections"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  schemas:
+    Connections:
+      type: "object"
+      properties:
+        connections:
+          type: "object"
+          additionalProperties:
+            $ref: "#/components/schemas/ConnectionStats"
+        total:
+          $ref: "#/components/schemas/ConnectionsTotal"
+      required: [ "connections", "total" ]
+
+    ConnectionStats:
+      type: "object"
+      properties:
+        at:
+          type: "string"
+          format: "date-time"
+        inBytesTotal:
+          type: "integer"
+          format: "int64"
+        outBytesTotal:
+          type: "integer"
+          format: "int64"
+        startedAt:
+          type: "string"
+          format: "date-time"
+        connected:
+          type: "boolean"
+        paused:
+          type: "boolean"
+        clientVersion:
+          type: "string"
+        address:
+          type: "string"
+        type:
+          type: "string"
+        isLocal:
+          type: "boolean"
+        crypto:
+          type: "string"
+        primary:
+          $ref: "#/components/schemas/ConnectionInfo"
+        secondary:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ConnectionInfo"
+      required:
+        - at
+        - inBytesTotal
+        - outBytesTotal
+        - startedAt
+        - connected
+        - paused
+        - clientVersion
+        - address
+        - type
+        - isLocal
+        - crypto
+        - primary
+        - secondary
+
+    ConnectionInfo:
+      type: "object"
+      properties:
+        at:
+          type: "string"
+          format: "date-time"
+        inBytesTotal:
+          type: "integer"
+          format: "int64"
+        outBytesTotal:
+          type: "integer"
+          format: "int64"
+        startedAt:
+          type: "string"
+          format: "date-time"
+        address:
+          type: "string"
+        type:
+          type: "string"
+        isLocal:
+          type: "boolean"
+        crypto:
+          type: "string"
+      required:
+        - at
+        - inBytesTotal
+        - outBytesTotal
+        - startedAt
+        - address
+        - type
+        - isLocal
+        - crypto
+
+    ConnectionsTotal:
+      type: "object"
+      properties:
+        at:
+          type: "string"
+          format: "date-time"
+        inBytesTotal:
+          type: "integer"
+          format: "int64"
+        outBytesTotal:
+          type: "integer"
+          format: "int64"
+      required: [ "at", "inBytesTotal", "outBytesTotal" ]
+
+    DeviceConfiguration:
+      # syncthing/lib/config/deviceconfiguration.pb.go
+      type: "object"
+      properties:
+        deviceID:
+          type: "string"
+        name:
+          type: "string"
+        addresses:
+          type: "array"
+          items:
+            type: "string"
+        compression:
+          type: "string"
+        certName:
+          type: "string"
+        introducer:
+          type: "boolean"
+        skipIntroductionRemovals:
+          type: "boolean"
+        introducedBy:
+          type: "string"
+        paused:
+          type: "boolean"
+        allowedNetworks:
+          type: "array"
+          items:
+            type: "string"
+        autoAcceptFolders:
+          type: "boolean"
+        maxSendKbps:
+          type: "integer"
+        maxRecvKbps:
+          type: "integer"
+        ignoredFolders:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ObservedFolder"
+        maxRequestKiB:
+          type: "integer"
+        untrusted:
+          type: "boolean"
+        remoteGUIPort:
+          type: "integer"
+        numConnections:
+          type: "integer"
+      required:
+        - deviceID
+        - name
+        - addresses
+        - compression
+        - certName
+        - introducer
+        - skipIntroductionRemovals
+        - introducedBy
+        - paused
+        - allowedNetworks
+        - autoAcceptFolders
+        - maxSendKbps
+        - maxRecvKbps
+        - ignoredFolders
+        - maxRequestKiB
+        - untrusted
+        - remoteGUIPort
+        - numConnections
+
+    DeviceStatistics:
+      # syncthing/lib/stats/device.go
+      type: "object"
+      properties:
+        lastSeen:
+          type: "string"
+          format: "date-time"
+        lastConnectionDurationS:
+          type: "number"
+          format: "double"
+      required: [ "lastSeen", "lastConnectionDurationS" ]
+
+    Error:
+      type: "object"
+      properties:
+        error:
+          type: "string"
+      required: [ "error" ]
+
+    FolderConfiguration:
+      # syncthing/lib/config/folderconfiguration.pb.go
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        label:
+          type: "string"
+        filesystemType:
+          type: "string"
+        path:
+          type: "string"
+        type:
+          type: "string"
+        devices:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/FolderDeviceConfiguration"
+        rescanIntervalS:
+          type: "integer"
+        fsWatcherEnabled:
+          type: "boolean"
+        fsWatcherDelayS:
+          type: "number"
+          format: "double"
+        ignorePerms:
+          type: "boolean"
+        autoNormalize:
+          type: "boolean"
+        minDiskFree:
+          $ref: "#/components/schemas/Size"
+        versioning:
+          $ref: "#/components/schemas/VersioningConfiguration"
+        copiers:
+          type: "integer"
+        pullerMaxPendingKib:
+          type: "integer"
+        hashers:
+          type: "integer"
+        order:
+          type: "string"
+        ignoreDelete:
+          type: "boolean"
+        scanProgressIntervalS:
+          type: "integer"
+        pullerPauseS:
+          type: "integer"
+        maxConflicts:
+          type: "integer"
+        disableSparseFiles:
+          type: "boolean"
+        disableTempIndexes:
+          type: "boolean"
+        paused:
+          type: "boolean"
+        weakHashThresholdPct:
+          type: "integer"
+        markerName:
+          type: "string"
+        copyOwnershipFromParent:
+          type: "boolean"
+        modTimeWindowS:
+          type: "integer"
+        maxConcurrentWrites:
+          type: "integer"
+        disableFsync:
+          type: "boolean"
+        blockPullOrder:
+          type: "string"
+        copyRangeMethod:
+          type: "string"
+        caseSensitiveFs:
+          type: "boolean"
+        followJunctions:
+          type: "boolean"
+        syncOwnership:
+          type: "boolean"
+        sendOwnership:
+          type: "boolean"
+        syncXattrs:
+          type: "boolean"
+        sendXattrs:
+          type: "boolean"
+        xattrFilter:
+          $ref: "#/components/schemas/XattrFilter"
+      required:
+        - id
+        - label
+        - filesystemType
+        - path
+        - type
+        - devices
+        - rescanIntervalS
+        - fsWatcherEnabled
+        - fsWatcherDelayS
+        - ignorePerms
+        - autoNormalize
+        - minDiskFree
+        - versioning
+        - copiers
+        - pullerMaxPendingKib
+        - hashers
+        - order
+        - ignoreDelete
+        - scanProgressIntervalS
+        - pullerPauseS
+        - maxConflicts
+        - disableSparseFiles
+        - disableTempIndexes
+        - paused
+        - weakHashThresholdPct
+        - markerName
+        - copyOwnershipFromParent
+        - modTimeWindowS
+        - maxConcurrentWrites
+        - disableFsync
+        - blockPullOrder
+        - copyRangeMethod
+        - caseSensitiveFs
+        - followJunctions
+        - syncOwnership
+        - sendOwnership
+        - syncXattrs
+        - sendXattrs
+        - xattrFilter
+
+    FolderDeviceConfiguration:
+      type: "object"
+      properties:
+        deviceId:
+          type: "string"
+        introducedBy:
+          type: "string"
+        encryptionPassword:
+          type: "string"
+      required: [ "deviceId", "introducedBy", "encryptionPassword" ]
+
+    HealthStatus:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+      required: [ "status" ]
+
+    ObservedFolder:
+      type: "object"
+      properties:
+        time:
+          type: "string"
+          format: "date-time"
+        id:
+          type: "string"
+        label:
+          type: "string"
+      required: [ "time", "id", "label" ]
+
+    Size:
+      type: "object"
+      properties:
+        value:
+          type: "number"
+        unit:
+          type: "string"
+      required: [ "value", "unit" ]
+
+    VersioningConfiguration:
+      type: "object"
+      properties:
+        type:
+          type: "string"
+        params:
+          type: "object"
+          additionalProperties:
+            type: "string"
+        cleanupIntervalS:
+          type: "integer"
+        fsPath:
+          type: "string"
+        fsType:
+          type: "string"
+      required: [ "type", "params", "cleanupIntervalS", "fsPath", "fsType" ]
+
+    XattrFilter:
+      type: "object"
+      properties:
+        entries:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/XattrFilterEntry"
+        maxSingleEntrySize:
+          type: "integer"
+        maxTotalSize:
+          type: "integer"
+      required: [ "entries", "maxSingleEntrySize", "maxTotalSize" ]
+
+    XattrFilterEntry:
+      type: "object"
+      properties:
+        match:
+          type: "string"
+        permit:
+          type: "boolean"
+      required: [ "match", "permit" ]
+
+  responses:
+    Error:
+      description: "server error"
+      content:
+        "application/json":
+          schema:
+            $ref: "#/components/schemas/Error"
