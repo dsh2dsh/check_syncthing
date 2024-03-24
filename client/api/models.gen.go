@@ -82,6 +82,18 @@ type Error struct {
 	Error string `json:"error"`
 }
 
+// FolderCompletion defines model for FolderCompletion.
+type FolderCompletion struct {
+	Completion  float64 `json:"completion"`
+	GlobalBytes int64   `json:"globalBytes"`
+	GlobalItems int     `json:"globalItems"`
+	NeedBytes   int64   `json:"needBytes"`
+	NeedDeletes int     `json:"needDeletes"`
+	NeedItems   int     `json:"needItems"`
+	RemoteState string  `json:"remoteState"`
+	Sequence    int64   `json:"sequence"`
+}
+
 // FolderConfiguration defines model for FolderConfiguration.
 type FolderConfiguration struct {
 	AutoNormalize           bool                        `json:"autoNormalize"`
@@ -170,4 +182,15 @@ type XattrFilter struct {
 type XattrFilterEntry struct {
 	Match  string `json:"match"`
 	Permit bool   `json:"permit"`
+}
+
+// CompletionParams defines parameters for Completion.
+type CompletionParams struct {
+	// Folder folder specifies the folder ID to calculate completion for. An empty
+	// or absent folder parameter means all folders as an aggregate.
+	Folder string `form:"folder" json:"folder"`
+
+	// Device device specifies the device ID to calculate completion for. An empty
+	// or absent device parameter means the local device.
+	Device string `form:"device" json:"device"`
 }

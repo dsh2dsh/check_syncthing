@@ -92,6 +92,9 @@ type ClientInterface interface {
 	// Folders request
 	Folders(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// Completion request
+	Completion(ctx context.Context, params *CompletionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// Health request
 	Health(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -116,6 +119,18 @@ func (c *Client) Devices(ctx context.Context, reqEditors ...RequestEditorFn) (*h
 
 func (c *Client) Folders(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFoldersRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Completion(ctx context.Context, params *CompletionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCompletionRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +221,43 @@ func NewFoldersRequest(server string) (*http.Request, error) {
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCompletionRequest generates requests for Completion
+func NewCompletionRequest(server string, params *CompletionParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/rest/db/completion")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		queryValues.Add("folder", params.Folder)
+
+		queryValues.Add("device", params.Device)
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -346,6 +398,9 @@ type ClientWithResponsesInterface interface {
 	// FoldersWithResponse request
 	FoldersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FoldersResponse, error)
 
+	// CompletionWithResponse request
+	CompletionWithResponse(ctx context.Context, params *CompletionParams, reqEditors ...RequestEditorFn) (*CompletionResponse, error)
+
 	// HealthWithResponse request
 	HealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthResponse, error)
 
@@ -396,6 +451,29 @@ func (r FoldersResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FoldersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CompletionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FolderCompletion
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r CompletionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CompletionResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -489,6 +567,15 @@ func (c *ClientWithResponses) FoldersWithResponse(ctx context.Context, reqEditor
 	return ParseFoldersResponse(rsp)
 }
 
+// CompletionWithResponse request returning *CompletionResponse
+func (c *ClientWithResponses) CompletionWithResponse(ctx context.Context, params *CompletionParams, reqEditors ...RequestEditorFn) (*CompletionResponse, error) {
+	rsp, err := c.Completion(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCompletionResponse(rsp)
+}
+
 // HealthWithResponse request returning *HealthResponse
 func (c *ClientWithResponses) HealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthResponse, error) {
 	rsp, err := c.Health(ctx, reqEditors...)
@@ -565,6 +652,39 @@ func ParseFoldersResponse(rsp *http.Response) (*FoldersResponse, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []FolderConfiguration
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCompletionResponse parses an HTTP response from a CompletionWithResponse call
+func ParseCompletionResponse(rsp *http.Response) (*CompletionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CompletionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FolderCompletion
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

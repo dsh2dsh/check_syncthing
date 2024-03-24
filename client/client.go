@@ -130,3 +130,18 @@ func (self *Client) DeviceStats(ctx context.Context) (
 	}
 	return *r.JSON200, nil
 }
+
+func (self *Client) Completion(ctx context.Context, folder, device string,
+) (*api.FolderCompletion, error) {
+	params := api.CompletionParams{Folder: folder, Device: device}
+	r, err := self.apiClient.CompletionWithResponse(ctx, &params)
+	if err != nil {
+		return nil, fmt.Errorf("completion request: %w", err)
+	}
+
+	if r.JSON200 == nil {
+		return nil, fmt.Errorf("completion: %w", makeAPIError(r.JSONDefault,
+			r.Status(), r.Body))
+	}
+	return r.JSON200, nil
+}

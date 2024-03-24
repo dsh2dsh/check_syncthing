@@ -60,3 +60,9 @@ func (self *ClientTestSuite) TestDeviceStats() {
 	self.Require().NoError(err)
 	self.NotEmpty(stats)
 }
+
+func (self *ClientTestSuite) TestCompletion() {
+	comp, err := self.client.Completion(context.Background(), "", "")
+	self.Require().NoError(err)
+	self.NotEmpty(comp)
+}

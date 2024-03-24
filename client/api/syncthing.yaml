@@ -38,6 +38,52 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /rest/db/completion:
+    description: |
+      Returns the completion percentage (0 to 100) and byte / item counts. Takes
+      optional device and folder parameters:
+
+      * folder specifies the folder ID to calculate completion for. An empty or
+        absent folder parameter means all folders as an aggregate.
+
+      * device specifies the device ID to calculate completion for. An empty or
+        absent device parameter means the local device.
+
+      If a device is specified but no folder, completion is calculated for all
+      folders shared with that device.
+    get:
+      operationId: "Completion"
+      parameters:
+        - name: "folder"
+          in: "query"
+          description: |
+            folder specifies the folder ID to calculate completion for. An empty
+            or absent folder parameter means all folders as an aggregate.
+          required: true
+          content:
+            "text/plain":
+              schema:
+                type: "string"
+        - name: "device"
+          in: "query"
+          description: |
+            device specifies the device ID to calculate completion for. An empty
+            or absent device parameter means the local device.
+          required: true
+          content:
+            "text/plain":
+              schema:
+                type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/FolderCompletion"
+        default:
+          $ref: "#/components/responses/Error"
+
   /rest/noauth/health:
     get:
       operationId: "Health"
@@ -280,6 +326,40 @@ components:
         error:
           type: "string"
       required: [ "error" ]
+
+    FolderCompletion:
+      # syncthing/lib/model/model.go
+      type: "object"
+      properties:
+        completion:
+          type: "number"
+          format: "double"
+        globalBytes:
+          type: "integer"
+          format: "int64"
+        globalItems:
+          type: "integer"
+        needBytes:
+          type: "integer"
+          format: "int64"
+        needDeletes:
+          type: "integer"
+        needItems:
+          type: "integer"
+        remoteState:
+          type: "string"
+        sequence:
+          type: "integer"
+          format: "int64"
+      required:
+        - completion
+        - globalBytes
+        - globalItems
+        - needBytes
+        - needDeletes
+        - needItems
+        - remoteState
+        - sequence
 
     FolderConfiguration:
       # syncthing/lib/config/folderconfiguration.pb.go
