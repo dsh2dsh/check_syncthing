@@ -1,3 +1,5 @@
+//go:generate oapi-codegen -config api/http.gen.yaml api/syncthing.yaml
+//go:generate oapi-codegen -config api/models.gen.yaml api/syncthing.yaml
 package client
 
 import (
@@ -6,7 +8,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/dsh2dsh/check_syncthing/api"
+	"github.com/dsh2dsh/check_syncthing/client/api"
 )
 
 const authHeader = "X-API-Key"

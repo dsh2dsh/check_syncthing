@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dsh2dsh/check_syncthing/api"
+	"github.com/dsh2dsh/check_syncthing/client/api"
 )
 
 const httpTimeout = 15
