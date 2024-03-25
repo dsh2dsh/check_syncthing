@@ -95,6 +95,9 @@ type ClientInterface interface {
 	// Completion request
 	Completion(ctx context.Context, params *CompletionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// FolderErrors request
+	FolderErrors(ctx context.Context, params *FolderErrorsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// Health request
 	Health(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -103,6 +106,9 @@ type ClientInterface interface {
 
 	// Connections request
 	Connections(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SystemErrors request
+	SystemErrors(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) Devices(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -141,6 +147,18 @@ func (c *Client) Completion(ctx context.Context, params *CompletionParams, reqEd
 	return c.Client.Do(req)
 }
 
+func (c *Client) FolderErrors(ctx context.Context, params *FolderErrorsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFolderErrorsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) Health(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewHealthRequest(c.Server)
 	if err != nil {
@@ -167,6 +185,18 @@ func (c *Client) DeviceStats(ctx context.Context, reqEditors ...RequestEditorFn)
 
 func (c *Client) Connections(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectionsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SystemErrors(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSystemErrorsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -268,6 +298,53 @@ func NewCompletionRequest(server string, params *CompletionParams) (*http.Reques
 	return req, nil
 }
 
+// NewFolderErrorsRequest generates requests for FolderErrors
+func NewFolderErrorsRequest(server string, params *FolderErrorsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/rest/folder/errors")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		queryValues.Add("folder", params.Folder)
+
+		if params.Page != nil {
+
+			queryValues.Add("page", *params.Page)
+
+		}
+
+		if params.Perpage != nil {
+
+			queryValues.Add("perpage", *params.Perpage)
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewHealthRequest generates requests for Health
 func NewHealthRequest(server string) (*http.Request, error) {
 	var err error
@@ -349,6 +426,33 @@ func NewConnectionsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewSystemErrorsRequest generates requests for SystemErrors
+func NewSystemErrorsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/rest/system/error")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -401,6 +505,9 @@ type ClientWithResponsesInterface interface {
 	// CompletionWithResponse request
 	CompletionWithResponse(ctx context.Context, params *CompletionParams, reqEditors ...RequestEditorFn) (*CompletionResponse, error)
 
+	// FolderErrorsWithResponse request
+	FolderErrorsWithResponse(ctx context.Context, params *FolderErrorsParams, reqEditors ...RequestEditorFn) (*FolderErrorsResponse, error)
+
 	// HealthWithResponse request
 	HealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthResponse, error)
 
@@ -409,6 +516,9 @@ type ClientWithResponsesInterface interface {
 
 	// ConnectionsWithResponse request
 	ConnectionsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConnectionsResponse, error)
+
+	// SystemErrorsWithResponse request
+	SystemErrorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SystemErrorsResponse, error)
 }
 
 type DevicesResponse struct {
@@ -474,6 +584,29 @@ func (r CompletionResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CompletionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FolderErrorsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FolderErrors
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r FolderErrorsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FolderErrorsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -549,6 +682,29 @@ func (r ConnectionsResponse) StatusCode() int {
 	return 0
 }
 
+type SystemErrorsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SystemErrors
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r SystemErrorsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SystemErrorsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // DevicesWithResponse request returning *DevicesResponse
 func (c *ClientWithResponses) DevicesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DevicesResponse, error) {
 	rsp, err := c.Devices(ctx, reqEditors...)
@@ -576,6 +732,15 @@ func (c *ClientWithResponses) CompletionWithResponse(ctx context.Context, params
 	return ParseCompletionResponse(rsp)
 }
 
+// FolderErrorsWithResponse request returning *FolderErrorsResponse
+func (c *ClientWithResponses) FolderErrorsWithResponse(ctx context.Context, params *FolderErrorsParams, reqEditors ...RequestEditorFn) (*FolderErrorsResponse, error) {
+	rsp, err := c.FolderErrors(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFolderErrorsResponse(rsp)
+}
+
 // HealthWithResponse request returning *HealthResponse
 func (c *ClientWithResponses) HealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthResponse, error) {
 	rsp, err := c.Health(ctx, reqEditors...)
@@ -601,6 +766,15 @@ func (c *ClientWithResponses) ConnectionsWithResponse(ctx context.Context, reqEd
 		return nil, err
 	}
 	return ParseConnectionsResponse(rsp)
+}
+
+// SystemErrorsWithResponse request returning *SystemErrorsResponse
+func (c *ClientWithResponses) SystemErrorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SystemErrorsResponse, error) {
+	rsp, err := c.SystemErrors(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSystemErrorsResponse(rsp)
 }
 
 // ParseDevicesResponse parses an HTTP response from a DevicesWithResponse call
@@ -702,6 +876,39 @@ func ParseCompletionResponse(rsp *http.Response) (*CompletionResponse, error) {
 	return response, nil
 }
 
+// ParseFolderErrorsResponse parses an HTTP response from a FolderErrorsWithResponse call
+func ParseFolderErrorsResponse(rsp *http.Response) (*FolderErrorsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FolderErrorsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FolderErrors
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseHealthResponse parses an HTTP response from a HealthWithResponse call
 func ParseHealthResponse(rsp *http.Response) (*HealthResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -784,6 +991,39 @@ func ParseConnectionsResponse(rsp *http.Response) (*ConnectionsResponse, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Connections
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSystemErrorsResponse parses an HTTP response from a SystemErrorsWithResponse call
+func ParseSystemErrorsResponse(rsp *http.Response) (*SystemErrorsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SystemErrorsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SystemErrors
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

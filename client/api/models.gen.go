@@ -82,6 +82,12 @@ type Error struct {
 	Error string `json:"error"`
 }
 
+// FileError defines model for FileError.
+type FileError struct {
+	Error string `json:"error"`
+	Path  string `json:"path"`
+}
+
 // FolderCompletion defines model for FolderCompletion.
 type FolderCompletion struct {
 	Completion  float64 `json:"completion"`
@@ -144,9 +150,24 @@ type FolderDeviceConfiguration struct {
 	IntroducedBy       string `json:"introducedBy"`
 }
 
+// FolderErrors defines model for FolderErrors.
+type FolderErrors struct {
+	Errors  []FileError `json:"errors"`
+	Folder  string      `json:"folder"`
+	Page    int         `json:"page"`
+	Perpage int         `json:"perpage"`
+}
+
 // HealthStatus defines model for HealthStatus.
 type HealthStatus struct {
 	Status string `json:"status"`
+}
+
+// LogLine defines model for LogLine.
+type LogLine struct {
+	Level   int       `json:"level"`
+	Message string    `json:"message"`
+	When    time.Time `json:"when"`
 }
 
 // ObservedFolder defines model for ObservedFolder.
@@ -160,6 +181,11 @@ type ObservedFolder struct {
 type Size struct {
 	Unit  string  `json:"unit"`
 	Value float32 `json:"value"`
+}
+
+// SystemErrors defines model for SystemErrors.
+type SystemErrors struct {
+	Errors []LogLine `json:"errors"`
 }
 
 // VersioningConfiguration defines model for VersioningConfiguration.
@@ -193,4 +219,11 @@ type CompletionParams struct {
 	// Device device specifies the device ID to calculate completion for. An empty
 	// or absent device parameter means the local device.
 	Device string `form:"device" json:"device"`
+}
+
+// FolderErrorsParams defines parameters for FolderErrors.
+type FolderErrorsParams struct {
+	Folder  string  `form:"folder" json:"folder"`
+	Page    *string `form:"page,omitempty" json:"page,omitempty"`
+	Perpage *string `form:"perpage,omitempty" json:"perpage,omitempty"`
 }

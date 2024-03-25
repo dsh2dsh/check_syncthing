@@ -84,6 +84,42 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /rest/folder/errors:
+    description: |
+      Takes one mandatory parameter, folder, and returns the list of errors
+      encountered during scanning or pulling.
+    get:
+      operationId: "FolderErrors"
+      parameters:
+        - name: "folder"
+          in: "query"
+          required: true
+          content:
+            "text/plain":
+              schema:
+                type: "string"
+        - name: "page"
+          in: "query"
+          content:
+            "text/plain":
+              schema:
+                type: "integer"
+        - name: "perpage"
+          in: "query"
+          content:
+            "text/plain":
+              schema:
+                type: "integer"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/FolderErrors"
+        default:
+          $ref: "#/components/responses/Error"
+
   /rest/noauth/health:
     get:
       operationId: "Health"
@@ -129,6 +165,20 @@ paths:
             "application/json":
               schema:
                 $ref: "#/components/schemas/Connections"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /rest/system/error:
+    description: "Returns the list of recent errors."
+    get:
+      operationId: "SystemErrors"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/SystemErrors"
         default:
           $ref: "#/components/responses/Error"
 
@@ -319,6 +369,43 @@ components:
           type: "number"
           format: "double"
       required: [ "lastSeen", "lastConnectionDurationS" ]
+
+    FileError:
+      type: "object"
+      properties:
+        path:
+          type: "string"
+        error:
+          type: "string"
+      required: [ "path", "error" ]
+
+    FolderErrors:
+      type: "object"
+      properties:
+        folder:
+          type: "string"
+        errors:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/FileError"
+        page:
+          type: "integer"
+        perpage:
+          type: "integer"
+      required: [ "folder", "errors", "page", "perpage" ]
+
+    LogLine:
+      # syncthing/lib/logger/logger.go
+      type: "object"
+      properties:
+        when:
+          type: "string"
+          format: "date-time"
+        message:
+          type: "string"
+        level:
+          type: "integer"
+      required: [ "when", "message", "level" ]
 
     Error:
       type: "object"
@@ -525,6 +612,15 @@ components:
         unit:
           type: "string"
       required: [ "value", "unit" ]
+
+    SystemErrors:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/LogLine"
+      required: [ "errors" ]
 
     VersioningConfiguration:
       type: "object"

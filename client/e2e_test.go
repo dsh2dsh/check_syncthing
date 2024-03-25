@@ -66,3 +66,25 @@ func (self *ClientTestSuite) TestCompletion() {
 	self.Require().NoError(err)
 	self.NotEmpty(comp)
 }
+
+func (self *ClientTestSuite) TestSystemErrors() {
+	sysErrors, err := self.client.SystemErrors(context.Background())
+	self.Require().NoError(err)
+	for i := range sysErrors {
+		self.Require().NotEmpty(sysErrors[i])
+	}
+}
+
+func (self *ClientTestSuite) TestFolderErrors() {
+	ctx := context.Background()
+	folders, err := self.client.Folders(ctx)
+	self.Require().NoError(err)
+	for i := range folders {
+		f := &folders[i]
+		folderErrors, err := self.client.FolderErrors(ctx, f.Id)
+		self.Require().NoError(err)
+		for i := range folderErrors {
+			self.Require().NotEmpty(folderErrors[i])
+		}
+	}
+}

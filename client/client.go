@@ -145,3 +145,31 @@ func (self *Client) Completion(ctx context.Context, folder, device string,
 	}
 	return r.JSON200, nil
 }
+
+func (self *Client) SystemErrors(ctx context.Context) ([]api.LogLine, error) {
+	r, err := self.apiClient.SystemErrorsWithResponse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("system errors request: %w", err)
+	}
+
+	if r.JSON200 == nil {
+		return nil, fmt.Errorf("system errors: %w", makeAPIError(r.JSONDefault,
+			r.Status(), r.Body))
+	}
+	return r.JSON200.Errors, nil
+}
+
+func (self *Client) FolderErrors(ctx context.Context, folder string,
+) ([]api.FileError, error) {
+	params := api.FolderErrorsParams{Folder: folder}
+	r, err := self.apiClient.FolderErrorsWithResponse(ctx, &params)
+	if err != nil {
+		return nil, fmt.Errorf("folder errors request: %w", err)
+	}
+
+	if r.JSON200 == nil {
+		return nil, fmt.Errorf("folder errors: %w", makeAPIError(r.JSONDefault,
+			r.Status(), r.Body))
+	}
+	return r.JSON200.Errors, nil
+}
