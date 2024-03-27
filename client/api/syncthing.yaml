@@ -370,6 +370,13 @@ components:
           format: "double"
       required: [ "lastSeen", "lastConnectionDurationS" ]
 
+    Error:
+      type: "object"
+      properties:
+        error:
+          type: "string"
+      required: [ "error" ]
+
     FileError:
       type: "object"
       properties:
@@ -378,41 +385,6 @@ components:
         error:
           type: "string"
       required: [ "path", "error" ]
-
-    FolderErrors:
-      type: "object"
-      properties:
-        folder:
-          type: "string"
-        errors:
-          type: "array"
-          items:
-            $ref: "#/components/schemas/FileError"
-        page:
-          type: "integer"
-        perpage:
-          type: "integer"
-      required: [ "folder", "errors", "page", "perpage" ]
-
-    LogLine:
-      # syncthing/lib/logger/logger.go
-      type: "object"
-      properties:
-        when:
-          type: "string"
-          format: "date-time"
-        message:
-          type: "string"
-        level:
-          type: "integer"
-      required: [ "when", "message", "level" ]
-
-    Error:
-      type: "object"
-      properties:
-        error:
-          type: "string"
-      required: [ "error" ]
 
     FolderCompletion:
       # syncthing/lib/model/model.go
@@ -585,12 +557,40 @@ components:
           type: "string"
       required: [ "deviceId", "introducedBy", "encryptionPassword" ]
 
+    FolderErrors:
+      type: "object"
+      properties:
+        folder:
+          type: "string"
+        errors:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/FileError"
+        page:
+          type: "integer"
+        perpage:
+          type: "integer"
+      required: [ "folder", "errors", "page", "perpage" ]
+
     HealthStatus:
       type: "object"
       properties:
         status:
           type: "string"
       required: [ "status" ]
+
+    LogLine:
+      # syncthing/lib/logger/logger.go
+      type: "object"
+      properties:
+        when:
+          type: "string"
+          format: "date-time"
+        message:
+          type: "string"
+        level:
+          type: "integer"
+      required: [ "when", "message", "level" ]
 
     ObservedFolder:
       type: "object"
