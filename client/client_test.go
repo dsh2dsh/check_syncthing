@@ -163,24 +163,8 @@ func TestCache_Health(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient := testHttpDoer{
-				func(req *http.Request) (*http.Response, error) {
-					r := httptest.NewRecorder()
-					r.Header().Set("Content-Type", tt.contentType)
-					r.WriteHeader(tt.statusCode)
-					_, err := r.WriteString(tt.body)
-					require.NoError(t, err)
-					return r.Result(), nil
-				},
-			}
-
-			c, err := New("/", func(self *Client) error {
-				return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
-			})
-			require.NoError(t, err)
-			require.NotNil(t, c)
-
-			err = c.Health(context.Background())
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
+			err := c.Health(context.Background())
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -190,6 +174,28 @@ func TestCache_Health(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newTestClient(t *testing.T, contentType string, statusCode int,
+	body string,
+) *Client {
+	httpClient := testHttpDoer{
+		func(req *http.Request) (*http.Response, error) {
+			r := httptest.NewRecorder()
+			r.Header().Set("Content-Type", contentType)
+			r.WriteHeader(statusCode)
+			_, err := r.WriteString(body)
+			require.NoError(t, err)
+			return r.Result(), nil
+		},
+	}
+
+	c, err := New("/", func(self *Client) error {
+		return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
+	})
+	require.NoError(t, err)
+	require.NotNil(t, c)
+	return c
 }
 
 func TestCache_Connections(t *testing.T) {
@@ -285,23 +291,7 @@ func TestCache_Connections(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient := testHttpDoer{
-				func(req *http.Request) (*http.Response, error) {
-					r := httptest.NewRecorder()
-					r.Header().Set("Content-Type", tt.contentType)
-					r.WriteHeader(tt.statusCode)
-					_, err := r.WriteString(tt.body)
-					require.NoError(t, err)
-					return r.Result(), nil
-				},
-			}
-
-			c, err := New("/", func(self *Client) error {
-				return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
-			})
-			require.NoError(t, err)
-			require.NotNil(t, c)
-
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
 			conn, err := c.Connections(context.Background())
 			if tt.assertErr != nil {
 				t.Log(err)
@@ -417,23 +407,7 @@ func TestCache_Folders(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient := testHttpDoer{
-				func(req *http.Request) (*http.Response, error) {
-					r := httptest.NewRecorder()
-					r.Header().Set("Content-Type", tt.contentType)
-					r.WriteHeader(tt.statusCode)
-					_, err := r.WriteString(tt.body)
-					require.NoError(t, err)
-					return r.Result(), nil
-				},
-			}
-
-			c, err := New("/", func(self *Client) error {
-				return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
-			})
-			require.NoError(t, err)
-			require.NotNil(t, c)
-
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
 			folders, err := c.Folders(context.Background())
 			if tt.assertErr != nil {
 				t.Log(err)
@@ -513,23 +487,7 @@ func TestCache_Devices(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient := testHttpDoer{
-				func(req *http.Request) (*http.Response, error) {
-					r := httptest.NewRecorder()
-					r.Header().Set("Content-Type", tt.contentType)
-					r.WriteHeader(tt.statusCode)
-					_, err := r.WriteString(tt.body)
-					require.NoError(t, err)
-					return r.Result(), nil
-				},
-			}
-
-			c, err := New("/", func(self *Client) error {
-				return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
-			})
-			require.NoError(t, err)
-			require.NotNil(t, c)
-
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
 			devices, err := c.Devices(context.Background())
 			if tt.assertErr != nil {
 				t.Log(err)
@@ -591,23 +549,7 @@ func TestCache_DeviceStats(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient := testHttpDoer{
-				func(req *http.Request) (*http.Response, error) {
-					r := httptest.NewRecorder()
-					r.Header().Set("Content-Type", tt.contentType)
-					r.WriteHeader(tt.statusCode)
-					_, err := r.WriteString(tt.body)
-					require.NoError(t, err)
-					return r.Result(), nil
-				},
-			}
-
-			c, err := New("/", func(self *Client) error {
-				return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
-			})
-			require.NoError(t, err)
-			require.NotNil(t, c)
-
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
 			stats, err := c.DeviceStats(context.Background())
 			if tt.assertErr != nil {
 				t.Log(err)
@@ -729,23 +671,7 @@ func TestCache_Completion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient := testHttpDoer{
-				func(req *http.Request) (*http.Response, error) {
-					r := httptest.NewRecorder()
-					r.Header().Set("Content-Type", tt.contentType)
-					r.WriteHeader(tt.statusCode)
-					_, err := r.WriteString(tt.body)
-					require.NoError(t, err)
-					return r.Result(), nil
-				},
-			}
-
-			c, err := New("/", func(self *Client) error {
-				return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
-			})
-			require.NoError(t, err)
-			require.NotNil(t, c)
-
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
 			comp, err := c.Completion(context.Background(), tt.folder, tt.device)
 			if tt.assertErr != nil {
 				t.Log(err)
@@ -820,23 +746,7 @@ func TestCache_SystemErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient := testHttpDoer{
-				func(req *http.Request) (*http.Response, error) {
-					r := httptest.NewRecorder()
-					r.Header().Set("Content-Type", tt.contentType)
-					r.WriteHeader(tt.statusCode)
-					_, err := r.WriteString(tt.body)
-					require.NoError(t, err)
-					return r.Result(), nil
-				},
-			}
-
-			c, err := New("/", func(self *Client) error {
-				return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
-			})
-			require.NoError(t, err)
-			require.NotNil(t, c)
-
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
 			sysErrors, err := c.SystemErrors(context.Background())
 			if tt.assertErr != nil {
 				t.Log(err)
@@ -915,23 +825,7 @@ func TestCache_FolderErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient := testHttpDoer{
-				func(req *http.Request) (*http.Response, error) {
-					r := httptest.NewRecorder()
-					r.Header().Set("Content-Type", tt.contentType)
-					r.WriteHeader(tt.statusCode)
-					_, err := r.WriteString(tt.body)
-					require.NoError(t, err)
-					return r.Result(), nil
-				},
-			}
-
-			c, err := New("/", func(self *Client) error {
-				return self.NewClientWithResponses(api.WithHTTPClient(&httpClient))
-			})
-			require.NoError(t, err)
-			require.NotNil(t, c)
-
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
 			folderErrors, err := c.FolderErrors(context.Background(), "default")
 			if tt.assertErr != nil {
 				t.Log(err)
