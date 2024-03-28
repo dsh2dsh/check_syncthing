@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/dsh2dsh/check_syncthing/client/api"
 )
@@ -70,7 +71,7 @@ func makeAPIError(jsonErr *api.Error, status string, body []byte) error {
 		return fmt.Errorf("unexpected syncthing error: %v", jsonErr.Error)
 	}
 	return fmt.Errorf("unexpected syncthing response: %v (%v)", status,
-		string(body))
+		strings.TrimSpace(string(body)))
 }
 
 func (self *Client) Connections(ctx context.Context) (*api.Connections, error) {

@@ -80,6 +80,18 @@ func TestCache_withAPIKey(t *testing.T) {
 	require.NoError(t, c.WithKey(key).Health(context.Background()))
 }
 
+func TestMakeAPIError(t *testing.T) {
+	err := makeAPIError(nil, "404 not found", []byte("some body\n"))
+	t.Log(err)
+	require.ErrorContains(t, err,
+		"unexpected syncthing response: 404 not found (some body)")
+
+	jsonErr := api.Error{Error: "some error"}
+	err = makeAPIError(&jsonErr, "", nil)
+	t.Log(err)
+	require.ErrorContains(t, err, "unexpected syncthing error: some error")
+}
+
 type testHttpDoer struct {
 	do func(req *http.Request) (*http.Response, error)
 }
