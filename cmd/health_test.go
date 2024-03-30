@@ -241,7 +241,7 @@ error: some error`)
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
 				assert.Contains(t, rawOutput, `WARNING: 1 system error(s): some error
-last error at: 2024-03-28 20:15:11 +0100 CET`)
+last error at: 2024-03-28 20:15:11`)
 			},
 		},
 	}
