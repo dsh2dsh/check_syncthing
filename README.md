@@ -12,6 +12,8 @@ and [vlcty] projects.
 [bn8]:https://gitea.zionetrix.net/bn8/check_syncthing.git
 [vlcty]:https://github.com/vlcty/check_syncthing
 
+FreeBSD port [here](https://github.com/dsh2dsh/freebsd-ports/tree/master/net-mgmt/check_syncthing)
+
 ## Usage
 
 ```
