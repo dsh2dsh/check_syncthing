@@ -63,3 +63,50 @@ Global Flags:
 $ check_syncthing health -u http://127.0.0.1:8384 -k XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 OK: syncthing server alive
 ```
+
+## Icinga2 configuration examples
+
+```
+object CheckCommand "check_syncthing" {
+  command = [ PluginDir + "/check_syncthing" ]
+
+  arguments = {
+    "--cmd" = {
+      value = "$syncthing_cmd$"
+      order = -1
+      skip_key = true
+    }
+    "-u" = {
+      value = "$syncthing_url$"
+      required = true
+    }
+    "-k" = {
+      value = "$syncthing_key$"
+    }
+  }
+
+  env.SYNCTHING_API_KEY = SyncthingKey
+
+  vars.syncthing_cmd = "health"
+  vars.syncthing_url = "http://$address$:8384"
+}
+```
+
+```
+apply Service "syncthing_" for (item => cfg in host.vars.syncthing) {
+  import "generic-service"
+
+  check_command = "check_syncthing"
+
+  vars.grafana_graph_disable = true
+  vars += cfg
+
+  assign where host.vars.syncthing
+}
+```
+
+```
+object Host "server" {
+  vars.syncthing["health"] = {}
+}
+```
