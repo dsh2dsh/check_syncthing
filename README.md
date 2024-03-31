@@ -80,14 +80,12 @@ object CheckCommand "check_syncthing" {
       value = "$syncthing_url$"
       required = true
     }
-    "-k" = {
-      value = "$syncthing_key$"
-    }
   }
 
-  env.SYNCTHING_API_KEY = SyncthingKey
+  env.SYNCTHING_API_KEY = "$syncthing_key$"
 
   vars.syncthing_cmd = "health"
+  vars.syncthing_key = SyncthingKey
   vars.syncthing_url = "http://$address$:8384"
 }
 ```
