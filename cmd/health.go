@@ -13,7 +13,7 @@ import (
 	"github.com/dsh2dsh/check_syncthing/client/api"
 )
 
-const healthOkMsg = "syncthing server alive"
+const healthOkMsg = "syncthing server alive: "
 
 var healthCmd = cobra.Command{
 	Use:   "health",
@@ -42,6 +42,8 @@ type HealthCheck struct {
 
 	sysErrors    []api.LogLine
 	folderErrors []folderErrors
+	system       *api.SystemStatus
+	devices      map[string]api.DeviceConfiguration
 }
 
 type folderErrors struct {
@@ -63,9 +65,13 @@ func (self *HealthCheck) Response() *monitoringplugin.Response {
 
 func (self *HealthCheck) Run() *HealthCheck {
 	ctx := context.Background()
-	if !self.checkHealth(ctx) || !self.fetchServerErrors(ctx) {
+	if !self.checkHealth(ctx) || !self.fetch(ctx) {
 		return self
 	}
+
+	sysDevice := self.devices[self.system.MyID]
+	self.resp.WithDefaultOkMessage(healthOkMsg + fmt.Sprintf("%s (%s)",
+		newDeviceId(self.system.MyID).Short(), sysDevice.Name))
 
 	if len(self.sysErrors) > 0 {
 		self.checkSysErrors(self.sysErrors)
@@ -81,12 +87,15 @@ func (self *HealthCheck) checkHealth(ctx context.Context) bool {
 		monitoringplugin.CRITICAL, "", true)
 }
 
-func (self *HealthCheck) fetchServerErrors(parentCtx context.Context) bool {
+func (self *HealthCheck) fetch(parentCtx context.Context) bool {
 	g, ctx := errgroup.WithContext(parentCtx)
 	g.SetLimit(fetchProcs)
-	g.Go(func() error { return self.fetchSysErrors(ctx) })
 
+	g.Go(func() error { return self.fetchSysErrors(ctx) })
+	g.Go(func() error { return self.fetchSystemStatus(ctx) })
+	g.Go(func() error { return self.fetchDevices(ctx) })
 	self.fetchFolderErrors(ctx, g)
+
 	self.resp.UpdateStatusOnError(g.Wait(), monitoringplugin.CRITICAL, "", true)
 	return self.resp.GetStatusCode() == monitoringplugin.OK
 }
@@ -97,6 +106,29 @@ func (self *HealthCheck) fetchSysErrors(ctx context.Context) error {
 		return err
 	} else if len(sysErrors) > 0 {
 		self.sysErrors = sysErrors
+	}
+	return nil
+}
+
+func (self *HealthCheck) fetchSystemStatus(ctx context.Context) error {
+	system, err := self.client.SystemStatus(ctx)
+	if err != nil {
+		return err
+	}
+	self.system = system
+	return nil
+}
+
+func (self *HealthCheck) fetchDevices(ctx context.Context) error {
+	devices, err := self.client.Devices(ctx)
+	if err != nil {
+		return err
+	}
+
+	self.devices = make(map[string]api.DeviceConfiguration, len(devices))
+	for i := range devices {
+		d := &devices[i]
+		self.devices[d.DeviceID] = devices[i]
 	}
 	return nil
 }

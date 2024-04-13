@@ -61,7 +61,7 @@ Global Flags:
   -u, --url string   server URL
 
 $ check_syncthing health -u http://127.0.0.1:8384 -k XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-OK: syncthing server alive
+OK: syncthing server alive: XXXXXXX (localhost)
 ```
 
 ## Icinga2 configuration examples

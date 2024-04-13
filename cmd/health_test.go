@@ -69,6 +69,31 @@ func TestHealthCheck_applyOptionsWithResp(t *testing.T) {
 
 func TestHealthCheck_Run(t *testing.T) {
 	const healthJSON = `{ "status": "OK" }`
+	const devicesJSON = `
+[
+  {
+    "deviceID": "XXXXXX1-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1",
+    "name": "some device",
+    "addresses": [
+      "dynamic"
+    ],
+    "compression": "metadata",
+    "certName": "",
+    "introducer": false,
+    "skipIntroductionRemovals": false,
+    "introducedBy": "",
+    "paused": false,
+    "allowedNetworks": [],
+    "autoAcceptFolders": false,
+    "maxSendKbps": 0,
+    "maxRecvKbps": 0,
+    "ignoredFolders": [],
+    "maxRequestKiB": 0,
+    "untrusted": false,
+    "remoteGUIPort": 0,
+    "numConnections": 0
+  }
+]`
 	const foldersJSON = `
 [
   {
@@ -132,6 +157,59 @@ func TestHealthCheck_Run(t *testing.T) {
   	}
   }
 ]`
+	const systemStatusJSON = `
+{
+ "alloc": 35216400,
+  "connectionServiceStatus": {
+    "quic://0.0.0.0:22000": {
+      "error": null,
+      "lanAddresses": [
+        "quic://0.0.0.0:22000",
+        "quic://127.0.0.1:22000"
+      ],
+      "wanAddresses": [
+        "quic://0.0.0.0:22000",
+        "quic://10.0.0.1:59574"
+      ]
+    },
+    "tcp://0.0.0.0:22000": {
+      "error": null,
+      "lanAddresses": [
+        "tcp://0.0.0.0:22000",
+        "tcp://127.0.0.1:22000"
+      ],
+      "wanAddresses": [
+        "tcp://0.0.0.0:0",
+        "tcp://0.0.0.0:22000"
+      ]
+    }
+  },
+  "cpuPercent": 0,
+  "discoveryEnabled": true,
+  "discoveryErrors": {
+    "IPv6 local": "listen udp6: socket: protocol not supported"
+  },
+  "discoveryMethods": 2,
+  "discoveryStatus": {
+    "IPv4 local": {
+      "error": null
+    },
+    "IPv6 local": {
+      "error": "listen udp6: socket: protocol not supported"
+    }
+  },
+  "goroutines": 151,
+  "guiAddressOverridden": false,
+  "guiAddressUsed": "127.0.0.1:8384",
+  "lastDialStatus": {},
+  "MyID": "XXXXXX1-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1",
+  "pathSeparator": "/",
+  "startTime": "2024-03-29T06:02:42+01:00",
+  "sys": 137501992,
+  "tilde": "/",
+  "uptime": 1333881,
+  "urVersionMax": 3
+}`
 	const systemErrorsJSON = `{ "errors": null }`
 	const folderErrorJSON = `
 {
@@ -153,30 +231,58 @@ func TestHealthCheck_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "crit folders and system errors",
+			name: "crit with health",
 			endpoints: map[string]string{
 				"/rest/noauth/health": healthJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
-				assert.Contains(t, rawOutput, "CRITICAL: folders:")
-				assert.Contains(t, rawOutput, "system errors:")
+				assert.Contains(t, rawOutput, "CRITICAL: ")
+				assert.Contains(t, rawOutput, "404 Not Found")
 			},
 		},
 		{
-			name: "crit system errors",
+			name: "crit with health and folders",
 			endpoints: map[string]string{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/folders": foldersJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
-				assert.Contains(t, rawOutput, "CRITICAL: system errors:")
+				assert.Contains(t, rawOutput, "CRITICAL: ")
+				assert.Contains(t, rawOutput, "404 Not Found")
 			},
 		},
 		{
-			name: "crit folder errors",
+			name: "crit without devices and system status",
 			endpoints: map[string]string{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/folders": foldersJSON,
+				"/rest/system/error":   systemErrorsJSON,
+			},
+			assertOutput: func(t *testing.T, rawOutput string) {
+				assert.Contains(t, rawOutput, "CRITICAL: ")
+				assert.Contains(t, rawOutput, "404 Not Found")
+			},
+		},
+		{
+			name: "crit without system status",
+			endpoints: map[string]string{
+				"/rest/noauth/health":  healthJSON,
+				"/rest/config/devices": devicesJSON,
+				"/rest/config/folders": foldersJSON,
+				"/rest/system/error":   systemErrorsJSON,
+			},
+			assertOutput: func(t *testing.T, rawOutput string) {
+				assert.Contains(t, rawOutput, "CRITICAL: ")
+				assert.Contains(t, rawOutput, "404 Not Found")
+			},
+		},
+		{
+			name: "crit without folder error",
+			endpoints: map[string]string{
+				"/rest/noauth/health":  healthJSON,
+				"/rest/config/devices": devicesJSON,
+				"/rest/config/folders": foldersJSON,
+				"/rest/system/status":  systemStatusJSON,
 				"/rest/system/error":   systemErrorsJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
@@ -188,19 +294,24 @@ func TestHealthCheck_Run(t *testing.T) {
 			name: "OK alive",
 			endpoints: map[string]string{
 				"/rest/noauth/health":                healthJSON,
+				"/rest/config/devices":               devicesJSON,
 				"/rest/config/folders":               foldersJSON,
+				"/rest/system/status":                systemStatusJSON,
 				"/rest/system/error":                 systemErrorsJSON,
 				"/rest/folder/errors?folder=default": folderErrorJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
-				assert.Contains(t, rawOutput, `OK: syncthing server alive`)
+				assert.Contains(t, rawOutput,
+					"OK: syncthing server alive: XXXXXX1 (some device)")
 			},
 		},
 		{
 			name: "with default folder error",
 			endpoints: map[string]string{
 				"/rest/noauth/health":  healthJSON,
+				"/rest/config/devices": devicesJSON,
 				"/rest/config/folders": foldersJSON,
+				"/rest/system/status":  systemStatusJSON,
 				"/rest/system/error":   systemErrorsJSON,
 				"/rest/folder/errors?folder=default": `
 {
@@ -226,7 +337,9 @@ error: some error`)
 			name: "with system error",
 			endpoints: map[string]string{
 				"/rest/noauth/health":  healthJSON,
+				"/rest/config/devices": devicesJSON,
 				"/rest/config/folders": foldersJSON,
+				"/rest/system/status":  systemStatusJSON,
 				"/rest/system/error": `
 {
   "errors": [
