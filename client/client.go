@@ -147,6 +147,21 @@ func (self *Client) Completion(ctx context.Context, folder, device string,
 	return r.JSON200, nil
 }
 
+func (self *Client) SystemStatus(ctx context.Context) (*api.SystemStatus,
+	error,
+) {
+	r, err := self.apiClient.SystemStatusWithResponse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("system status request: %w", err)
+	}
+
+	if r.JSON200 == nil {
+		return nil, fmt.Errorf("system status: %w", makeAPIError(r.JSONDefault,
+			r.Status(), r.Body))
+	}
+	return r.JSON200, nil
+}
+
 func (self *Client) SystemErrors(ctx context.Context) ([]api.LogLine, error) {
 	r, err := self.apiClient.SystemErrorsWithResponse(ctx)
 	if err != nil {

@@ -67,6 +67,12 @@ func (self *ClientTestSuite) TestCompletion() {
 	self.NotEmpty(comp)
 }
 
+func (self *ClientTestSuite) TestSystemStatus() {
+	status, err := self.client.SystemStatus(context.Background())
+	self.Require().NoError(err)
+	self.NotEmpty(status)
+}
+
 func (self *ClientTestSuite) TestSystemErrors() {
 	sysErrors, err := self.client.SystemErrors(context.Background())
 	self.Require().NoError(err)

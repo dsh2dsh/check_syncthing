@@ -109,6 +109,9 @@ type ClientInterface interface {
 
 	// SystemErrors request
 	SystemErrors(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SystemStatus request
+	SystemStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) Devices(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -197,6 +200,18 @@ func (c *Client) Connections(ctx context.Context, reqEditors ...RequestEditorFn)
 
 func (c *Client) SystemErrors(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSystemErrorsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SystemStatus(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSystemStatusRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -453,6 +468,33 @@ func NewSystemErrorsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewSystemStatusRequest generates requests for SystemStatus
+func NewSystemStatusRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/rest/system/status")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -519,6 +561,9 @@ type ClientWithResponsesInterface interface {
 
 	// SystemErrorsWithResponse request
 	SystemErrorsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SystemErrorsResponse, error)
+
+	// SystemStatusWithResponse request
+	SystemStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SystemStatusResponse, error)
 }
 
 type DevicesResponse struct {
@@ -705,6 +750,29 @@ func (r SystemErrorsResponse) StatusCode() int {
 	return 0
 }
 
+type SystemStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SystemStatus
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r SystemStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SystemStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // DevicesWithResponse request returning *DevicesResponse
 func (c *ClientWithResponses) DevicesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DevicesResponse, error) {
 	rsp, err := c.Devices(ctx, reqEditors...)
@@ -775,6 +843,15 @@ func (c *ClientWithResponses) SystemErrorsWithResponse(ctx context.Context, reqE
 		return nil, err
 	}
 	return ParseSystemErrorsResponse(rsp)
+}
+
+// SystemStatusWithResponse request returning *SystemStatusResponse
+func (c *ClientWithResponses) SystemStatusWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SystemStatusResponse, error) {
+	rsp, err := c.SystemStatus(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSystemStatusResponse(rsp)
 }
 
 // ParseDevicesResponse parses an HTTP response from a DevicesWithResponse call
@@ -1024,6 +1101,39 @@ func ParseSystemErrorsResponse(rsp *http.Response) (*SystemErrorsResponse, error
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest SystemErrors
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSystemStatusResponse parses an HTTP response from a SystemStatusWithResponse call
+func ParseSystemStatusResponse(rsp *http.Response) (*SystemStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SystemStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SystemStatus
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

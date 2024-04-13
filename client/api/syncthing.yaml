@@ -182,6 +182,20 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /rest/system/status:
+    description: "Returns information about current system status and resource usage."
+    get:
+      operationId: "SystemStatus"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/SystemStatus"
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   schemas:
     Connections:
@@ -278,6 +292,16 @@ components:
         - isLocal
         - crypto
 
+    ConnectionStatusEntry:
+      type: "object"
+      properties:
+        when:
+          type: "string"
+          format: "date-time"
+        error:
+          type: "string"
+      required: [ "when", "error" ]
+
     ConnectionsTotal:
       type: "object"
       properties:
@@ -369,6 +393,13 @@ components:
           type: "number"
           format: "double"
       required: [ "lastSeen", "lastConnectionDurationS" ]
+
+    DiscoveryStatusEntry:
+      type: "object"
+      properties:
+        error:
+          type: "string"
+      required: [ "error" ]
 
     Error:
       type: "object"
@@ -579,6 +610,21 @@ components:
           type: "string"
       required: [ "status" ]
 
+    ListenerStatusEntry:
+      type: "object"
+      properties:
+        error:
+          type: "string"
+        lanAddresses:
+          type: "array"
+          items:
+            type: "string"
+        wanAddresses:
+          type: "array"
+          items:
+            type: "string"
+      required: [ "error", "lanAddresses", "wanAddresses" ]
+
     LogLine:
       # syncthing/lib/logger/logger.go
       type: "object"
@@ -621,6 +667,66 @@ components:
           items:
             $ref: "#/components/schemas/LogLine"
       required: [ "errors" ]
+
+    SystemStatus:
+      # syncthing/lib/api/api.go
+      type: "object"
+      properties:
+        myID:
+          type: "string"
+        goroutines:
+          type: "integer"
+        alloc:
+          type: "integer"
+          x-go-type: "uint64"
+        sys:
+          type: "integer"
+          x-go-type: "uint64"
+        tilde:
+          type: "string"
+        discoveryEnabled:
+          type: "boolean"
+        discoveryStatus:
+          type: "object"
+          additionalProperties:
+            $ref: "#/components/schemas/DiscoveryStatusEntry"
+        connectionServiceStatus:
+          type: "object"
+          additionalProperties:
+            $ref: "#/components/schemas/ListenerStatusEntry"
+        lastDialStatus:
+          type: "object"
+          additionalProperties:
+            $ref: "#/components/schemas/ConnectionStatusEntry"
+        pathSeparator:
+          type: "string"
+        urVersionMax:
+          type: "integer"
+        uptime:
+          type: "integer"
+        startTime:
+          type: "string"
+          format: "date-time"
+        guiAddressOverridden:
+          type: "boolean"
+        guiAddressUsed:
+          type: "string"
+      required:
+        - myID
+        - goroutines
+        - alloc
+        - sys
+        - tilde
+        - discoveryEnabled
+        - discoveryStatus
+        - connectionServiceStatus
+        - lastDialStatus
+        - pathSeparator
+        - urVersionMax
+        - uptime
+        - startTime
+        - guiAddressOverridden
+        - guiAddressUsed
 
     VersioningConfiguration:
       type: "object"

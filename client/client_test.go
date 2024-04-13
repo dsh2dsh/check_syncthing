@@ -842,3 +842,110 @@ func TestClient_FolderErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_SystemStatus(t *testing.T) {
+	tests := []struct {
+		name        string
+		statusCode  int
+		contentType string
+		body        string
+		assertErr   func(t *testing.T, err error)
+	}{
+		{
+			name:        "OK",
+			statusCode:  http.StatusOK,
+			contentType: "application/json",
+			body: `
+{
+ "alloc": 35216400,
+  "connectionServiceStatus": {
+    "quic://0.0.0.0:22000": {
+      "error": null,
+      "lanAddresses": [
+        "quic://0.0.0.0:22000",
+        "quic://127.0.0.1:22000"
+      ],
+      "wanAddresses": [
+        "quic://0.0.0.0:22000",
+        "quic://10.0.0.1:59574"
+      ]
+    },
+    "tcp://0.0.0.0:22000": {
+      "error": null,
+      "lanAddresses": [
+        "tcp://0.0.0.0:22000",
+        "tcp://127.0.0.1:22000"
+      ],
+      "wanAddresses": [
+        "tcp://0.0.0.0:0",
+        "tcp://0.0.0.0:22000"
+      ]
+    }
+  },
+  "cpuPercent": 0,
+  "discoveryEnabled": true,
+  "discoveryErrors": {
+    "IPv6 local": "listen udp6: socket: protocol not supported"
+  },
+  "discoveryMethods": 2,
+  "discoveryStatus": {
+    "IPv4 local": {
+      "error": null
+    },
+    "IPv6 local": {
+      "error": "listen udp6: socket: protocol not supported"
+    }
+  },
+  "goroutines": 151,
+  "guiAddressOverridden": false,
+  "guiAddressUsed": "127.0.0.1:8384",
+  "lastDialStatus": {},
+  "myID": "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX",
+  "pathSeparator": "/",
+  "startTime": "2024-03-29T06:02:42+01:00",
+  "sys": 137501992,
+  "tilde": "/",
+  "uptime": 1333881,
+  "urVersionMax": 3
+}`,
+		},
+		{
+			name:        "empty body",
+			statusCode:  http.StatusOK,
+			contentType: "application/json",
+			assertErr: func(t *testing.T, err error) {
+				var syntaxErr *json.SyntaxError
+				assert.ErrorAs(t, err, &syntaxErr)
+			},
+		},
+		{
+			name:        "has error",
+			statusCode:  http.StatusInternalServerError,
+			contentType: "application/json",
+			body:        `{ "error": "some error message" }`,
+			assertErr: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err,
+					"system status: unexpected syncthing error: some error message")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
+			sysStatus, err := c.SystemStatus(context.Background())
+			if tt.assertErr != nil {
+				t.Log(err)
+				require.Error(t, err)
+				tt.assertErr(t, err)
+			} else {
+				require.NoError(t, err)
+				if tt.body != "" {
+					var want api.SystemStatus
+					require.NoError(t, json.Unmarshal([]byte(tt.body), &want))
+					assert.Equal(t, &want, sysStatus)
+				}
+			}
+		})
+	}
+}

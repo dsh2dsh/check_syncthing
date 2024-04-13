@@ -36,6 +36,12 @@ type ConnectionStats struct {
 	Type          string           `json:"type"`
 }
 
+// ConnectionStatusEntry defines model for ConnectionStatusEntry.
+type ConnectionStatusEntry struct {
+	Error string    `json:"error"`
+	When  time.Time `json:"when"`
+}
+
 // Connections defines model for Connections.
 type Connections struct {
 	Connections map[string]ConnectionStats `json:"connections"`
@@ -75,6 +81,11 @@ type DeviceConfiguration struct {
 type DeviceStatistics struct {
 	LastConnectionDurationS float64   `json:"lastConnectionDurationS"`
 	LastSeen                time.Time `json:"lastSeen"`
+}
+
+// DiscoveryStatusEntry defines model for DiscoveryStatusEntry.
+type DiscoveryStatusEntry struct {
+	Error string `json:"error"`
 }
 
 // Error defines model for Error.
@@ -163,6 +174,13 @@ type HealthStatus struct {
 	Status string `json:"status"`
 }
 
+// ListenerStatusEntry defines model for ListenerStatusEntry.
+type ListenerStatusEntry struct {
+	Error        string   `json:"error"`
+	LanAddresses []string `json:"lanAddresses"`
+	WanAddresses []string `json:"wanAddresses"`
+}
+
 // LogLine defines model for LogLine.
 type LogLine struct {
 	Level   int       `json:"level"`
@@ -186,6 +204,25 @@ type Size struct {
 // SystemErrors defines model for SystemErrors.
 type SystemErrors struct {
 	Errors []LogLine `json:"errors"`
+}
+
+// SystemStatus defines model for SystemStatus.
+type SystemStatus struct {
+	Alloc                   uint64                           `json:"alloc"`
+	ConnectionServiceStatus map[string]ListenerStatusEntry   `json:"connectionServiceStatus"`
+	DiscoveryEnabled        bool                             `json:"discoveryEnabled"`
+	DiscoveryStatus         map[string]DiscoveryStatusEntry  `json:"discoveryStatus"`
+	Goroutines              int                              `json:"goroutines"`
+	GuiAddressOverridden    bool                             `json:"guiAddressOverridden"`
+	GuiAddressUsed          string                           `json:"guiAddressUsed"`
+	LastDialStatus          map[string]ConnectionStatusEntry `json:"lastDialStatus"`
+	MyID                    string                           `json:"myID"`
+	PathSeparator           string                           `json:"pathSeparator"`
+	StartTime               time.Time                        `json:"startTime"`
+	Sys                     uint64                           `json:"sys"`
+	Tilde                   string                           `json:"tilde"`
+	Uptime                  int                              `json:"uptime"`
+	UrVersionMax            int                              `json:"urVersionMax"`
 }
 
 // VersioningConfiguration defines model for VersioningConfiguration.
