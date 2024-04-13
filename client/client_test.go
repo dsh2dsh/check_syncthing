@@ -50,7 +50,7 @@ func TestClient_NewClientWithResponses(t *testing.T) {
 	require.ErrorIs(t, err, wantErr)
 }
 
-func TestCache_WithKey(t *testing.T) {
+func TestClient_WithKey(t *testing.T) {
 	const key = "foobar"
 	c, err := New("/")
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestCache_WithKey(t *testing.T) {
 	assert.Equal(t, key, c.apiKey)
 }
 
-func TestCache_withAPIKey(t *testing.T) {
+func TestClient_withAPIKey(t *testing.T) {
 	const key = "foobar"
 	httpClient := testHttpDoer{
 		func(req *http.Request) (*http.Response, error) {
@@ -100,7 +100,7 @@ func (self *testHttpDoer) Do(req *http.Request) (*http.Response, error) {
 	return self.do(req)
 }
 
-func TestCache_Health(t *testing.T) {
+func TestClient_Health(t *testing.T) {
 	tests := []struct {
 		name        string
 		statusCode  int
@@ -198,7 +198,7 @@ func newTestClient(t *testing.T, contentType string, statusCode int,
 	return c
 }
 
-func TestCache_Connections(t *testing.T) {
+func TestClient_Connections(t *testing.T) {
 	tests := []struct {
 		name        string
 		statusCode  int
@@ -310,7 +310,7 @@ func TestCache_Connections(t *testing.T) {
 	}
 }
 
-func TestCache_Folders(t *testing.T) {
+func TestClient_Folders(t *testing.T) {
 	tests := []struct {
 		name        string
 		statusCode  int
@@ -426,7 +426,7 @@ func TestCache_Folders(t *testing.T) {
 	}
 }
 
-func TestCache_Devices(t *testing.T) {
+func TestClient_Devices(t *testing.T) {
 	tests := []struct {
 		name        string
 		statusCode  int
@@ -506,7 +506,7 @@ func TestCache_Devices(t *testing.T) {
 	}
 }
 
-func TestCache_DeviceStats(t *testing.T) {
+func TestClient_DeviceStats(t *testing.T) {
 	tests := []struct {
 		name        string
 		statusCode  int
@@ -568,7 +568,7 @@ func TestCache_DeviceStats(t *testing.T) {
 	}
 }
 
-func TestCache_Completion(t *testing.T) {
+func TestClient_Completion(t *testing.T) {
 	const folder = "default"
 	const device = "XXXXXX1-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1"
 
@@ -690,7 +690,7 @@ func TestCache_Completion(t *testing.T) {
 	}
 }
 
-func TestCache_SystemErrors(t *testing.T) {
+func TestClient_SystemErrors(t *testing.T) {
 	tests := []struct {
 		name           string
 		folder, device string
@@ -764,7 +764,7 @@ func TestCache_SystemErrors(t *testing.T) {
 	}
 }
 
-func TestCache_FolderErrors(t *testing.T) {
+func TestClient_FolderErrors(t *testing.T) {
 	tests := []struct {
 		name           string
 		folder, device string
