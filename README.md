@@ -114,9 +114,18 @@ object CheckCommand "check_syncthing" {
       order = -1
       skip_key = true
     }
+    "-c" = {
+      value = "$syncthing_crit$"
+    }
     "-u" = {
       value = "$syncthing_url$"
       required = true
+    }
+    "-w" = {
+      value = "$syncthing_warn$"
+    }
+    "-x" = {
+      value = "$syncthing_exclude$"
     }
   }
 
@@ -133,8 +142,7 @@ apply Service "syncthing_" for (item => cfg in host.vars.syncthing) {
   import "generic-service"
 
   check_command = "check_syncthing"
-
-  vars.grafana_graph_disable = true
+  vars.syncthing_cmd = item
   vars += cfg
 
   assign where host.vars.syncthing
@@ -143,6 +151,12 @@ apply Service "syncthing_" for (item => cfg in host.vars.syncthing) {
 
 ```
 object Host "server" {
-  vars.syncthing["health"] = {}
+  vars.syncthing["health"] = {
+    grafana_graph_disable = true
+  }
+  vars.syncthing["last-seen"] = {
+    syncthing_warn = "12h"
+    syncthing_crit = "48h"
+  }
 }
 ```
