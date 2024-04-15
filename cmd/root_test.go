@@ -67,3 +67,31 @@ func TestMustAPIClient(t *testing.T) {
 	cmd.Env = append(os.Environ(), "EXECUTE_TEST="+t.Name())
 	require.NoError(t, cmd.Run())
 }
+
+func TestDeviceName(t *testing.T) {
+	name := deviceName(
+		"XXXXXX2-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1",
+		"system name")
+	assert.Equal(t, "XXXXXX2 (system name)", name)
+}
+
+func TestNewDeviceId(t *testing.T) {
+	id := newDeviceId(
+		"XXXXXX2-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1")
+	assert.Equal(t, "XXXXXX2", id.Short())
+}
+
+func TestNewLookupDeviceId(t *testing.T) {
+	const testId = "XXXXXX2-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1"
+
+	l := lookupDeviceId{}
+	assert.False(t, l.Has(testId))
+
+	l = newLookupDeviceId([]string{})
+	assert.False(t, l.Has(testId))
+
+	l = newLookupDeviceId([]string{"XXXXXX1", testId, "XXXXXX3"})
+	assert.True(t, l.Has(testId))
+	assert.False(t,
+		l.Has("XXXXXX4-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1"))
+}

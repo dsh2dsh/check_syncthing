@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,7 +21,7 @@ func TestNewHealthCheck(t *testing.T) {
 	assert.Equal(t, "OK: "+healthOkMsg, resp.GetInfo().RawOutput)
 }
 
-func testNewHealthCheck(t *testing.T, endpoints map[string]string,
+func testNewHealthCheck(t *testing.T, endpoints map[string]any,
 ) *HealthCheck {
 	check := NewHealthCheck(newTestClient(t, fakeAPI(t, endpoints)))
 	require.NotNil(t, check)
@@ -41,12 +42,12 @@ func (self testHttpDoer) Do(req *http.Request) (*http.Response, error) {
 	return self(req)
 }
 
-func fakeAPI(t *testing.T, endpoints map[string]string,
+func fakeAPI(t *testing.T, endpoints map[string]any,
 ) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
 		require.NotNil(t, req.URL)
 		t.Log(req.URL)
-		json, ok := endpoints[req.URL.String()]
+		v, ok := endpoints[req.URL.String()]
 		r := httptest.NewRecorder()
 		if !ok {
 			r.WriteHeader(http.StatusNotFound)
@@ -54,7 +55,16 @@ func fakeAPI(t *testing.T, endpoints map[string]string,
 		}
 		r.Header().Set("Content-Type", "application/json")
 		r.WriteHeader(http.StatusOK)
-		_, err := r.WriteString(json)
+		var b []byte
+		switch v := v.(type) {
+		case string:
+			b = []byte(v)
+		default:
+			b2, err := json.Marshal(v)
+			require.NoError(t, err)
+			b = b2
+		}
+		_, err := r.Write(b)
 		require.NoError(t, err)
 		return r.Result(), nil
 	}
@@ -221,7 +231,7 @@ func TestHealthCheck_Run(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		endpoints    map[string]string
+		endpoints    map[string]any
 		assertOutput func(t *testing.T, rawOutput string)
 	}{
 		{
@@ -232,7 +242,7 @@ func TestHealthCheck_Run(t *testing.T) {
 		},
 		{
 			name: "crit with health",
-			endpoints: map[string]string{
+			endpoints: map[string]any{
 				"/rest/noauth/health": healthJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
@@ -242,7 +252,7 @@ func TestHealthCheck_Run(t *testing.T) {
 		},
 		{
 			name: "crit with health and folders",
-			endpoints: map[string]string{
+			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/folders": foldersJSON,
 			},
@@ -253,7 +263,7 @@ func TestHealthCheck_Run(t *testing.T) {
 		},
 		{
 			name: "crit without devices and system status",
-			endpoints: map[string]string{
+			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/folders": foldersJSON,
 				"/rest/system/error":   systemErrorsJSON,
@@ -265,7 +275,7 @@ func TestHealthCheck_Run(t *testing.T) {
 		},
 		{
 			name: "crit without system status",
-			endpoints: map[string]string{
+			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/devices": devicesJSON,
 				"/rest/config/folders": foldersJSON,
@@ -278,7 +288,7 @@ func TestHealthCheck_Run(t *testing.T) {
 		},
 		{
 			name: "crit without folder error",
-			endpoints: map[string]string{
+			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/devices": devicesJSON,
 				"/rest/config/folders": foldersJSON,
@@ -292,7 +302,7 @@ func TestHealthCheck_Run(t *testing.T) {
 		},
 		{
 			name: "OK alive",
-			endpoints: map[string]string{
+			endpoints: map[string]any{
 				"/rest/noauth/health":                healthJSON,
 				"/rest/config/devices":               devicesJSON,
 				"/rest/config/folders":               foldersJSON,
@@ -307,7 +317,7 @@ func TestHealthCheck_Run(t *testing.T) {
 		},
 		{
 			name: "with default folder error",
-			endpoints: map[string]string{
+			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/devices": devicesJSON,
 				"/rest/config/folders": foldersJSON,
@@ -335,7 +345,7 @@ error: some error`)
 		},
 		{
 			name: "with system error",
-			endpoints: map[string]string{
+			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/devices": devicesJSON,
 				"/rest/config/folders": foldersJSON,

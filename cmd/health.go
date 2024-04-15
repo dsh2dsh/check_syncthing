@@ -68,10 +68,7 @@ func (self *HealthCheck) Run() *HealthCheck {
 	if !self.checkHealth(ctx) || !self.fetch(ctx) {
 		return self
 	}
-
-	sysDevice := self.devices[self.system.MyID]
-	self.resp.WithDefaultOkMessage(healthOkMsg + fmt.Sprintf("%s (%s)",
-		newDeviceId(self.system.MyID).Short(), sysDevice.Name))
+	self.resp.WithDefaultOkMessage(healthOkMsg + self.systemName())
 
 	if len(self.sysErrors) > 0 {
 		self.checkSysErrors(self.sysErrors)
@@ -160,6 +157,10 @@ func (self *HealthCheck) fetchFolderErrors(ctx context.Context,
 			return nil
 		})
 	}
+}
+
+func (self *HealthCheck) systemName() string {
+	return deviceName(self.system.MyID, self.devices[self.system.MyID].Name)
 }
 
 func (self *HealthCheck) checkSysErrors(sysErrors []api.LogLine) {

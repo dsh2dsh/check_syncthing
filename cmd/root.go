@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/caarlos0/env/v10"
 	dotenv "github.com/dsh2dsh/expx-dotenv"
@@ -36,6 +37,7 @@ func init() {
 		"syncthing REST API key")
 	rootCmd.PersistentFlags().StringVarP(&baseURL, "url", "u", "", "server URL")
 	rootCmd.AddCommand(&healthCmd)
+	rootCmd.AddCommand(&lastSeenCmd)
 }
 
 func Execute() {
@@ -95,4 +97,48 @@ func mustAPIClient() *client.Client {
 		cobra.CheckErr(fmt.Errorf("create syncthing REST API client: %w", err))
 	}
 	return c.WithKey(apiKey)
+}
+
+// --------------------------------------------------
+
+func deviceName(id, name string) string {
+	return newDeviceId(id).Short() + " (" + name + ")"
+}
+
+func newDeviceId(id string) deviceId {
+	return deviceId(id)
+}
+
+type deviceId string
+
+func (self deviceId) Short() string {
+	shortId, _, _ := strings.Cut(string(self), "-")
+	return shortId
+}
+
+// --------------------------------------------------
+
+func newLookupDeviceId(ids []string) lookupDeviceId {
+	l := lookupDeviceId{devices: make(map[string]struct{}, len(ids))}
+	for _, id := range ids {
+		l.Add(id)
+	}
+	return l
+}
+
+type lookupDeviceId struct {
+	devices map[string]struct{}
+}
+
+func (self *lookupDeviceId) Add(id string) {
+	self.devices[self.shortId(id)] = struct{}{}
+}
+
+func (self *lookupDeviceId) shortId(id string) string {
+	return newDeviceId(id).Short()
+}
+
+func (self *lookupDeviceId) Has(id string) bool {
+	_, ok := self.devices[self.shortId(id)]
+	return ok
 }
