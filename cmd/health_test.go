@@ -79,6 +79,7 @@ func TestHealthCheck_applyOptionsWithResp(t *testing.T) {
 
 func TestHealthCheck_Run(t *testing.T) {
 	const healthJSON = `{ "status": "OK" }`
+
 	const devicesJSON = `
 [
   {
@@ -104,69 +105,7 @@ func TestHealthCheck_Run(t *testing.T) {
     "numConnections": 0
   }
 ]`
-	const foldersJSON = `
-[
-  {
-  	"id": "default",
-  	"label": "Default Folder",
-  	"filesystemType": "basic",
-  	"path": "/Default Folder",
-  	"type": "sendreceive",
-  	"devices": [
-  		{
-  			"deviceID": "XXXXXX1-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1",
-  			"introducedBy": "",
-  			"encryptionPassword": ""
-  		}
-  	],
-  	"rescanIntervalS": 3600,
-  	"fsWatcherEnabled": true,
-  	"fsWatcherDelayS": 10,
-  	"ignorePerms": false,
-  	"autoNormalize": true,
-  	"minDiskFree": {
-  		"value": 0,
-  		"unit": ""
-  	},
-  	"versioning": {
-  		"type": "",
-  		"params": {},
-  		"cleanupIntervalS": 3600,
-  		"fsPath": "",
-  		"fsType": "basic"
-  	},
-  	"copiers": 0,
-  	"pullerMaxPendingKiB": 0,
-  	"hashers": 0,
-  	"order": "random",
-  	"ignoreDelete": false,
-  	"scanProgressIntervalS": 0,
-  	"pullerPauseS": 0,
-  	"maxConflicts": -1,
-  	"disableSparseFiles": false,
-  	"disableTempIndexes": false,
-  	"paused": false,
-  	"weakHashThresholdPct": 25,
-  	"markerName": ".stfolder",
-  	"copyOwnershipFromParent": false,
-  	"modTimeWindowS": 0,
-  	"maxConcurrentWrites": 2,
-  	"disableFsync": false,
-  	"blockPullOrder": "standard",
-  	"copyRangeMethod": "standard",
-  	"caseSensitiveFS": false,
-  	"junctionsAsDirs": false,
-  	"syncOwnership": false,
-  	"sendOwnership": false,
-  	"syncXattrs": false,
-  	"sendXattrs": false,
-  	"xattrFilter": {
-  		"entries": [],
-  		"maxSingleEntrySize": 0,
-  		"maxTotalSize": 0
-  	}
-  }
-]`
+
 	const systemStatusJSON = `
 {
  "alloc": 35216400,
@@ -221,13 +160,6 @@ func TestHealthCheck_Run(t *testing.T) {
   "urVersionMax": 3
 }`
 	const systemErrorsJSON = `{ "errors": null }`
-	const folderErrorJSON = `
-{
-  "errors": null,
-  "folder": "default",
-  "page": 1,
-  "perpage": 65536
-}`
 
 	tests := []struct {
 		name         string
@@ -251,22 +183,10 @@ func TestHealthCheck_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "crit with health and folders",
-			endpoints: map[string]any{
-				"/rest/noauth/health":  healthJSON,
-				"/rest/config/folders": foldersJSON,
-			},
-			assertOutput: func(t *testing.T, rawOutput string) {
-				assert.Contains(t, rawOutput, "CRITICAL: ")
-				assert.Contains(t, rawOutput, "404 Not Found")
-			},
-		},
-		{
 			name: "crit without devices and system status",
 			endpoints: map[string]any{
-				"/rest/noauth/health":  healthJSON,
-				"/rest/config/folders": foldersJSON,
-				"/rest/system/error":   systemErrorsJSON,
+				"/rest/noauth/health": healthJSON,
+				"/rest/system/error":  systemErrorsJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
 				assert.Contains(t, rawOutput, "CRITICAL: ")
@@ -278,7 +198,6 @@ func TestHealthCheck_Run(t *testing.T) {
 			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/devices": devicesJSON,
-				"/rest/config/folders": foldersJSON,
 				"/rest/system/error":   systemErrorsJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
@@ -287,28 +206,12 @@ func TestHealthCheck_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "crit without folder error",
+			name: "OK alive",
 			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/devices": devicesJSON,
-				"/rest/config/folders": foldersJSON,
 				"/rest/system/status":  systemStatusJSON,
 				"/rest/system/error":   systemErrorsJSON,
-			},
-			assertOutput: func(t *testing.T, rawOutput string) {
-				assert.Contains(t, rawOutput,
-					`CRITICAL: folder id="default", label="Default Folder": folder errors:`)
-			},
-		},
-		{
-			name: "OK alive",
-			endpoints: map[string]any{
-				"/rest/noauth/health":                healthJSON,
-				"/rest/config/devices":               devicesJSON,
-				"/rest/config/folders":               foldersJSON,
-				"/rest/system/status":                systemStatusJSON,
-				"/rest/system/error":                 systemErrorsJSON,
-				"/rest/folder/errors?folder=default": folderErrorJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
 				assert.Contains(t, rawOutput,
@@ -316,39 +219,10 @@ func TestHealthCheck_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "with default folder error",
-			endpoints: map[string]any{
-				"/rest/noauth/health":  healthJSON,
-				"/rest/config/devices": devicesJSON,
-				"/rest/config/folders": foldersJSON,
-				"/rest/system/status":  systemStatusJSON,
-				"/rest/system/error":   systemErrorsJSON,
-				"/rest/folder/errors?folder=default": `
-{
-  "errors": [
-    {
-      "error": "some error",
-      "path": "/some file path"
-    }
-  ],
-  "folder": "default",
-  "page": 1,
-  "perpage": 65536
-}`,
-			},
-			assertOutput: func(t *testing.T, rawOutput string) {
-				assert.Contains(t, rawOutput, `WARNING: 1/1 folders with errors
-folder: default (Default Folder)
-path: /some file path
-error: some error`)
-			},
-		},
-		{
 			name: "with system error",
 			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/devices": devicesJSON,
-				"/rest/config/folders": foldersJSON,
 				"/rest/system/status":  systemStatusJSON,
 				"/rest/system/error": `
 {
@@ -360,7 +234,6 @@ error: some error`)
     }
   ]
 }`,
-				"/rest/folder/errors?folder=default": folderErrorJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
 				assert.Contains(t, rawOutput, `WARNING: 1 system error(s): some error
