@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/caarlos0/env/v10"
+	"github.com/caarlos0/env/v11"
 	dotenv "github.com/dsh2dsh/expx-dotenv"
 	"github.com/stretchr/testify/suite"
 )
