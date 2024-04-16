@@ -34,9 +34,10 @@ Available Commands:
   last-seen   Check last seen time of syncthing clients
 
 Flags:
-  -h, --help         help for check_syncthing
-  -k, --key string   syncthing REST API key
-  -u, --url string   server URL
+  -x, --exclude stringArray   short IDs of devices to exclude
+  -h, --help                  help for check_syncthing
+  -k, --key string            syncthing REST API key
+  -u, --url string            server URL
 
 Use "check_syncthing [command] --help" for more information about a command.
 ```
@@ -77,7 +78,6 @@ Usage:
 
 Flags:
   -c, --crit duration         critical threshold (default 15m0s)
-  -x, --exclude stringArray   IDs of devices to exclude
   -h, --help                  help for last-seen
   -w, --warn duration         warning threshold (default 5m0s)
 

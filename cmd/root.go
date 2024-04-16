@@ -18,6 +18,7 @@ const fetchProcs = 8
 
 var (
 	apiKey, baseURL string
+	excludeDevices  []string
 
 	rootCmd = cobra.Command{
 		Use:   "check_syncthing",
@@ -33,9 +34,12 @@ inside .env file in current dir.`,
 )
 
 func init() {
+	rootCmd.PersistentFlags().StringArrayVarP(&excludeDevices, "exclude", "x",
+		[]string{}, "short IDs of devices to exclude")
 	rootCmd.PersistentFlags().StringVarP(&apiKey, "key", "k", "",
 		"syncthing REST API key")
 	rootCmd.PersistentFlags().StringVarP(&baseURL, "url", "u", "", "server URL")
+	rootCmd.AddCommand(&foldersCmd)
 	rootCmd.AddCommand(&healthCmd)
 	rootCmd.AddCommand(&lastSeenCmd)
 }

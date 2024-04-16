@@ -15,10 +15,7 @@ import (
 
 const seenOkMsg = "oldest last seen: "
 
-var (
-	excludeDevices             []string
-	warnLastSeen, critLastSeen time.Duration
-)
+var warnLastSeen, critLastSeen time.Duration
 
 var lastSeenCmd = cobra.Command{
 	Use:   "last-seen",
@@ -37,8 +34,6 @@ critical status if it's out of given thresholds.`,
 }
 
 func init() {
-	lastSeenCmd.Flags().StringArrayVarP(&excludeDevices, "exclude", "x",
-		[]string{}, "IDs of devices to exclude")
 	lastSeenCmd.Flags().DurationVarP(&warnLastSeen, "warn", "w", 5*time.Minute,
 		"warning threshold")
 	lastSeenCmd.Flags().DurationVarP(&critLastSeen, "crit", "c", 15*time.Minute,
