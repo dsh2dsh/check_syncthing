@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dsh2dsh/check_syncthing/client"
+	"github.com/dsh2dsh/check_syncthing/client/api"
 )
 
 const fetchProcs = 8
@@ -123,7 +124,7 @@ func (self deviceId) Short() string {
 // --------------------------------------------------
 
 func newLookupDeviceId(ids []string) lookupDeviceId {
-	l := lookupDeviceId{devices: make(map[string]struct{}, len(ids))}
+	l := lookupDeviceId{devices: make(map[string]bool, len(ids))}
 	for _, id := range ids {
 		l.Add(id)
 	}
@@ -131,11 +132,12 @@ func newLookupDeviceId(ids []string) lookupDeviceId {
 }
 
 type lookupDeviceId struct {
-	devices map[string]struct{}
+	devices  map[string]bool
+	excluded []string
 }
 
 func (self *lookupDeviceId) Add(id string) {
-	self.devices[self.shortId(id)] = struct{}{}
+	self.devices[self.shortId(id)] = false
 }
 
 func (self *lookupDeviceId) shortId(id string) string {
@@ -143,6 +145,25 @@ func (self *lookupDeviceId) shortId(id string) string {
 }
 
 func (self *lookupDeviceId) Has(id string) bool {
-	_, ok := self.devices[self.shortId(id)]
+	shortId := self.shortId(id)
+	seen, ok := self.devices[shortId]
+	if ok && !seen {
+		self.excluded = append(self.excluded, id)
+		self.devices[shortId] = true
+	}
 	return ok
+}
+
+func (self *lookupDeviceId) Excluded() bool {
+	return len(self.excluded) > 0
+}
+
+func (self *lookupDeviceId) ExcludedString(
+	devices map[string]api.DeviceConfiguration,
+) string {
+	excluded := make([]string, len(self.excluded))
+	for i, id := range self.excluded {
+		excluded[i] = deviceName(id, devices[id].Name)
+	}
+	return strings.Join(excluded, ", ")
 }

@@ -29,6 +29,7 @@ Usage:
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
+  folders     Check status of syncthing folders
   health      Check health of syncthing server
   help        Help about any command
   last-seen   Check last seen time of syncthing clients
@@ -100,6 +101,38 @@ device: XXXXXXX (device1)
 last seen: 23m32s ago
 threshold: 15m0s
 excluded: YYYYYYY Windows 7 device) | 'last seen'=1412s;300;900;;
+```
+
+```
+$ check_syncthing folders -h
+Check status of syncthing folders.
+
+Checks for any folder error and completion status of all clients.
+
+Usage:
+  check_syncthing folders [flags]
+
+Flags:
+  -h, --help   help for folders
+
+Global Flags:
+  -x, --exclude stringArray   short IDs of devices to exclude
+  -k, --key string            syncthing REST API key
+  -u, --url string            server URL
+
+$ check_syncthing folders
+OK: 8 syncthing folders
+
+$ check_syncthing folders
+WARNING: 2/8 folders out of sync
+folder: default (Default Folder)
+device: XXXXXXX (pc1) - 99%
+folder: xxxxx-yyyyy (Folder2)
+device: XXXXXXX (pc1) - 3%
+
+$ check_syncthing folders -x XXXXXXX
+OK: 8 syncthing folders
+excluded: XXXXXXX (pc1)
 ```
 
 ## Icinga2 configuration examples

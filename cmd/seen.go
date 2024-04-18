@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/dsh2dsh/go-monitoringplugin/v2"
@@ -60,8 +59,6 @@ type LastSeenCheck struct {
 	devices map[string]api.DeviceConfiguration
 	stats   map[string]api.DeviceStatistics
 	system  *api.SystemStatus
-
-	excluded []string
 }
 
 func (self *LastSeenCheck) applyOptions() *LastSeenCheck {
@@ -74,7 +71,6 @@ func (self *LastSeenCheck) applyOptions() *LastSeenCheck {
 func (self *LastSeenCheck) WithExcludeDevices(devices []string,
 ) *LastSeenCheck {
 	self.excludeDevices = newLookupDeviceId(devices)
-	self.excluded = make([]string, 0, len(devices))
 	return self
 }
 
@@ -164,9 +160,7 @@ func (self *LastSeenCheck) fetchStats(ctx context.Context) error {
 
 func (self *LastSeenCheck) oldest() (deviceId string, seen time.Time) {
 	for id, stat := range self.stats {
-		if self.excludeDevices.Has(id) {
-			self.excluded = append(self.excluded, id)
-		} else if id != self.system.MyID {
+		if id != self.system.MyID && !self.excludeDevices.Has(id) {
 			if seen.IsZero() || stat.LastSeen.Before(seen) {
 				deviceId = id
 				if stat.LastSeen.Unix() == 0 {
@@ -202,14 +196,9 @@ func (self *LastSeenCheck) outputThreshold() {
 }
 
 func (self *LastSeenCheck) outputExcluded() {
-	if len(self.excluded) == 0 {
+	if !self.excludeDevices.Excluded() {
 		return
 	}
-
-	ex := make([]string, len(self.excluded))
-	for i, id := range self.excluded {
-		ex[i] = self.deviceName(id)
-	}
-	self.resp.UpdateStatus(
-		self.resp.GetStatusCode(), "excluded: "+strings.Join(ex, ", "))
+	self.resp.UpdateStatus(self.resp.GetStatusCode(),
+		"excluded: "+self.excludeDevices.ExcludedString(self.devices))
 }
