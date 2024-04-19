@@ -187,6 +187,9 @@ object Host "server" {
   vars.syncthing["health"] = {
     grafana_graph_disable = true
   }
+  vars.syncthing["folders"] = {
+    grafana_graph_disable = true
+  }
   vars.syncthing["last-seen"] = {
     syncthing_warn = "12h"
     syncthing_crit = "48h"
