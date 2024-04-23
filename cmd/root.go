@@ -45,7 +45,8 @@ func init() {
 	rootCmd.AddCommand(&lastSeenCmd)
 }
 
-func Execute() {
+func Execute(version string) {
+	rootCmd.Version = version
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
