@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/dsh2dsh/go-monitoringplugin/v2"
 	"github.com/spf13/cobra"
@@ -39,6 +40,7 @@ type HealthCheck struct {
 	sysErrors []api.LogLine
 	system    *api.SystemStatus
 	devices   map[string]api.DeviceConfiguration
+	conns     *api.Connections
 }
 
 func (self *HealthCheck) applyOptions() *HealthCheck {
@@ -57,7 +59,9 @@ func (self *HealthCheck) Run() *HealthCheck {
 	if !self.checkHealth(ctx) || !self.fetch(ctx) {
 		return self
 	}
+
 	self.resp.WithDefaultOkMessage(healthOkMsg + self.systemName())
+	self.outputConnected()
 
 	if len(self.sysErrors) > 0 {
 		self.checkSysErrors(self.sysErrors)
@@ -77,6 +81,7 @@ func (self *HealthCheck) fetch(parentCtx context.Context) bool {
 	g.Go(func() error { return self.fetchSysErrors(ctx) })
 	g.Go(func() error { return self.fetchSystemStatus(ctx) })
 	g.Go(func() error { return self.fetchDevices(ctx) })
+	g.Go(func() error { return self.fetchConns(ctx) })
 
 	self.resp.UpdateStatusOnError(g.Wait(), monitoringplugin.CRITICAL, "", true)
 	return self.resp.GetStatusCode() == monitoringplugin.OK
@@ -115,8 +120,33 @@ func (self *HealthCheck) fetchDevices(ctx context.Context) error {
 	return nil
 }
 
+func (self *HealthCheck) fetchConns(ctx context.Context) error {
+	conns, err := self.client.Connections(ctx)
+	if err != nil {
+		return err
+	}
+	self.conns = conns
+	return nil
+}
+
 func (self *HealthCheck) systemName() string {
 	return deviceName(self.system.MyID, self.devices[self.system.MyID].Name)
+}
+
+func (self *HealthCheck) outputConnected() {
+	var connected int
+	for _, c := range self.conns.Connections {
+		if c.Connected {
+			connected++
+		}
+	}
+	self.resp.UpdateStatus(monitoringplugin.OK,
+		"connected: "+strconv.Itoa(connected))
+
+	point := monitoringplugin.NewPerformanceDataPoint("connected", connected)
+	if err := self.resp.AddPerformanceDataPoint(point); err != nil {
+		self.resp.UpdateStatusOnError(err, monitoringplugin.UNKNOWN, "", true)
+	}
 }
 
 func (self *HealthCheck) checkSysErrors(sysErrors []api.LogLine) {

@@ -65,6 +65,7 @@ Global Flags:
 
 $ check_syncthing health -u http://127.0.0.1:8384 -k XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 OK: syncthing server alive: XXXXXXX (localhost)
+connected: 4 | 'connected'=4
 ```
 
 ```
