@@ -161,6 +161,64 @@ func TestHealthCheck_Run(t *testing.T) {
 }`
 	const systemErrorsJSON = `{ "errors": null }`
 
+	const connectionsJSON = `
+{
+  "connections": {
+    "XXXXXX1-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX1": {
+      "at": "2024-03-22T21:14:32+01:00",
+      "inBytesTotal": 10539,
+      "outBytesTotal": 877500,
+      "startedAt": "2024-03-22T14:34:54+01:00",
+      "connected": true,
+      "paused": false,
+      "clientVersion": "v0.0.4",
+      "address": "127.0.1.2:22000",
+      "type": "tcp-server",
+      "isLocal": true,
+      "crypto": "TLS1.3-TLS_AES_128_GCM_SHA256",
+      "primary": {
+        "at": "2024-03-22T21:14:32+01:00",
+        "inBytesTotal": 10539,
+        "outBytesTotal": 877500,
+        "startedAt": "2024-03-22T14:34:54+01:00",
+        "address": "127.0.1.2:22000",
+        "type": "tcp-server",
+        "isLocal": true,
+        "crypto": "TLS1.3-TLS_AES_128_GCM_SHA256"
+      }
+    },
+    "XXXXXX2-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXX2": {
+      "at": "0001-01-01T00:00:00Z",
+      "inBytesTotal": 0,
+      "outBytesTotal": 0,
+      "startedAt": "0001-01-01T00:00:00Z",
+      "connected": false,
+      "paused": false,
+      "clientVersion": "",
+      "address": "",
+      "type": "",
+      "isLocal": false,
+      "crypto": "",
+      "primary": {
+        "at": "0001-01-01T00:00:00Z",
+        "inBytesTotal": 0,
+        "outBytesTotal": 0,
+        "startedAt": "0001-01-01T00:00:00Z",
+        "address": "",
+        "type": "",
+        "isLocal": false,
+        "crypto": ""
+      }
+    }
+  },
+
+  "total": {
+    "at": "2024-03-22T21:14:32+01:00",
+    "inBytesTotal": 163746446,
+    "outBytesTotal": 427863355
+  }
+}`
+
 	tests := []struct {
 		name         string
 		endpoints    map[string]any
@@ -206,12 +264,26 @@ func TestHealthCheck_Run(t *testing.T) {
 			},
 		},
 		{
-			name: "OK alive",
+			name: "crit without connections",
 			endpoints: map[string]any{
 				"/rest/noauth/health":  healthJSON,
 				"/rest/config/devices": devicesJSON,
-				"/rest/system/status":  systemStatusJSON,
 				"/rest/system/error":   systemErrorsJSON,
+				"/rest/system/status":  systemStatusJSON,
+			},
+			assertOutput: func(t *testing.T, rawOutput string) {
+				assert.Contains(t, rawOutput, "CRITICAL: ")
+				assert.Contains(t, rawOutput, "404 Not Found")
+			},
+		},
+		{
+			name: "OK alive",
+			endpoints: map[string]any{
+				"/rest/noauth/health":      healthJSON,
+				"/rest/config/devices":     devicesJSON,
+				"/rest/system/status":      systemStatusJSON,
+				"/rest/system/error":       systemErrorsJSON,
+				"/rest/system/connections": connectionsJSON,
 			},
 			assertOutput: func(t *testing.T, rawOutput string) {
 				assert.Contains(t, rawOutput,
@@ -221,9 +293,10 @@ func TestHealthCheck_Run(t *testing.T) {
 		{
 			name: "with system error",
 			endpoints: map[string]any{
-				"/rest/noauth/health":  healthJSON,
-				"/rest/config/devices": devicesJSON,
-				"/rest/system/status":  systemStatusJSON,
+				"/rest/noauth/health":      healthJSON,
+				"/rest/config/devices":     devicesJSON,
+				"/rest/system/status":      systemStatusJSON,
+				"/rest/system/connections": connectionsJSON,
 				"/rest/system/error": `
 {
   "errors": [
