@@ -3,7 +3,7 @@ module github.com/dsh2dsh/check_syncthing
 go 1.22
 
 require (
-	github.com/caarlos0/env/v11 v11.2.0
+	github.com/caarlos0/env/v11 v11.2.2
 	github.com/dsh2dsh/expx-dotenv v1.3.2
 	github.com/dsh2dsh/go-monitoringplugin/v2 v2.0.1
 	github.com/spf13/cobra v1.8.1
