@@ -14,6 +14,10 @@ and [vlcty] projects.
 
 FreeBSD port [here](https://github.com/dsh2dsh/freebsd-ports/tree/master/net-mgmt/check_syncthing)
 
+``` shell
+pkg install check_syncthing
+```
+
 ## Usage
 
 ```
