@@ -37,8 +37,8 @@ func TestLoadEnvs(t *testing.T) {
 	assert.Equal(t, "/", baseURL)
 
 	apiKey, baseURL = "", ""
-	require.NoError(t, os.Setenv("SYNCTHING_API_KEY", "foobaz"))
-	require.NoError(t, os.Setenv("SYNCTHING_URL", "/syncthing/"))
+	t.Setenv("SYNCTHING_API_KEY", "foobaz")
+	t.Setenv("SYNCTHING_URL", "/syncthing/")
 	require.NoError(t, loadEnvs())
 	assert.Equal(t, "foobaz", apiKey)
 	assert.Equal(t, "/syncthing/", baseURL)
