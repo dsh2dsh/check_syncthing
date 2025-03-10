@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -77,7 +76,7 @@ func TestClient_withAPIKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	require.NoError(t, c.WithKey(key).Health(context.Background()))
+	require.NoError(t, c.WithKey(key).Health(t.Context()))
 }
 
 func TestMakeAPIError(t *testing.T) {
@@ -164,7 +163,7 @@ func TestClient_Health(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			err := c.Health(context.Background())
+			err := c.Health(t.Context())
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -292,7 +291,7 @@ func TestClient_Connections(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			conn, err := c.Connections(context.Background())
+			conn, err := c.Connections(t.Context())
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -408,7 +407,7 @@ func TestClient_Folders(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			folders, err := c.Folders(context.Background())
+			folders, err := c.Folders(t.Context())
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -488,7 +487,7 @@ func TestClient_Devices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			devices, err := c.Devices(context.Background())
+			devices, err := c.Devices(t.Context())
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -550,7 +549,7 @@ func TestClient_DeviceStats(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			stats, err := c.DeviceStats(context.Background())
+			stats, err := c.DeviceStats(t.Context())
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -672,7 +671,7 @@ func TestClient_Completion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			comp, err := c.Completion(context.Background(), tt.folder, tt.device)
+			comp, err := c.Completion(t.Context(), tt.folder, tt.device)
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -747,7 +746,7 @@ func TestClient_SystemErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			sysErrors, err := c.SystemErrors(context.Background())
+			sysErrors, err := c.SystemErrors(t.Context())
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -826,7 +825,7 @@ func TestClient_FolderErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			folderErrors, err := c.FolderErrors(context.Background(), "default")
+			folderErrors, err := c.FolderErrors(t.Context(), "default")
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)
@@ -933,7 +932,7 @@ func TestClient_SystemStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := newTestClient(t, tt.contentType, tt.statusCode, tt.body)
-			sysStatus, err := c.SystemStatus(context.Background())
+			sysStatus, err := c.SystemStatus(t.Context())
 			if tt.assertErr != nil {
 				t.Log(err)
 				require.Error(t, err)

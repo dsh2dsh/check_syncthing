@@ -1,6 +1,6 @@
 module github.com/dsh2dsh/check_syncthing
 
-go 1.22
+go 1.24
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
