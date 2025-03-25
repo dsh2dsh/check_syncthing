@@ -96,16 +96,16 @@ func TestNewLookupDeviceId(t *testing.T) {
 	l := lookupDeviceId{}
 	assert.False(t, l.Has(testId2))
 	assert.False(t, l.Excluded())
-	assert.Zero(t, l.ExcludedString(devices))
+	assert.Empty(t, l.ExcludedString(devices))
 
 	l = newLookupDeviceId([]string{})
 	assert.False(t, l.Has(testId2))
 	assert.False(t, l.Excluded())
-	assert.Zero(t, l.ExcludedString(devices))
+	assert.Empty(t, l.ExcludedString(devices))
 
 	l = newLookupDeviceId([]string{"XXXXXX1", testId2, "XXXXXX3"})
 	assert.False(t, l.Excluded())
-	assert.Zero(t, l.ExcludedString(devices))
+	assert.Empty(t, l.ExcludedString(devices))
 	assert.True(t, l.Has(testId2))
 
 	assert.True(t, l.Excluded())
