@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
-	github.com/dsh2dsh/expx-dotenv v1.3.2
+	github.com/dsh2dsh/expx-dotenv v1.4.0
 	github.com/dsh2dsh/go-monitoringplugin/v2 v2.0.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
