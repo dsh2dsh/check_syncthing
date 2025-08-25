@@ -7,7 +7,7 @@ require (
 	github.com/dsh2dsh/expx-dotenv v1.4.0
 	github.com/dsh2dsh/go-monitoringplugin/v2 v2.0.1
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	golang.org/x/sync v0.16.0
 )
 
