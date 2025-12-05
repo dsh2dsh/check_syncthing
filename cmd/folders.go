@@ -150,7 +150,7 @@ func (self *FoldersCheck) folderError(ctx context.Context, folderId string,
 	} else if len(fileErrors) > 0 {
 		folderError = fileErrors[len(fileErrors)-1]
 	}
-	return
+	return folderError, err
 }
 
 func (self *FoldersCheck) fetchCompletions(ctx context.Context,
@@ -189,13 +189,13 @@ func (self *FoldersCheck) numCompletions() int {
 
 func (self *FoldersCheck) completion(ctx context.Context,
 	folder *api.FolderConfiguration, deviceId string,
-) (comp *api.FolderCompletion, err error) {
-	comp, err = self.client.Completion(ctx, folder.Id, deviceId)
+) (*api.FolderCompletion, error) {
+	comp, err := self.client.Completion(ctx, folder.Id, deviceId)
 	if err != nil {
 		err = fmt.Errorf("completion folder=%q, device=%q: %w",
 			folderName(folder), self.deviceName(deviceId), err)
 	}
-	return
+	return comp, err
 }
 
 func (self *FoldersCheck) deviceName(id string) string {

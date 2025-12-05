@@ -170,7 +170,7 @@ func (self *LastSeenCheck) oldest() (deviceId string, seen time.Time) {
 			}
 		}
 	}
-	return
+	return deviceId, seen
 }
 
 func (self *LastSeenCheck) output(deviceId string, lastSeen time.Duration) {
